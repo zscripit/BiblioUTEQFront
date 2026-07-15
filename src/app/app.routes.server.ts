@@ -7,12 +7,12 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
-    // Panel del bibliotecario (EPIC05): también depende de la sesión.
-    path: 'bibliotecario/prestamos',
+    // Panel del bibliotecario (préstamos y devoluciones): también depende de la sesión.
+    path: 'bibliotecario',
     renderMode: RenderMode.Client,
   },
   {
-    path: 'bibliotecario/prestamos/**',
+    path: 'bibliotecario/**',
     renderMode: RenderMode.Client,
   },
   {

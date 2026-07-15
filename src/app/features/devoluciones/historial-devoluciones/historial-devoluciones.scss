@@ -1,0 +1,102 @@
+.bloque {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  padding: 1.75rem;
+  box-shadow: var(--sombra-sm);
+}
+
+.bloque__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.bloque__descripcion {
+  color: var(--tinta-600);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  max-width: 68ch;
+}
+
+.filtros {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filtros .campo {
+  margin-bottom: 0;
+  min-width: 190px;
+}
+
+.filtros select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--blanco);
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tabla th {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  background: var(--crema);
+  color: var(--tinta-600);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tabla td {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--borde);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.tabla td strong {
+  display: block;
+  color: var(--tinta-900);
+}
+
+.tabla td small {
+  color: var(--tinta-600);
+}
+
+.tabla__vacio {
+  text-align: center;
+  color: var(--tinta-400);
+  padding: 2rem !important;
+  white-space: normal;
+}
+
+.etiqueta--tardia {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+@media (max-width: 620px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

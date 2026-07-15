@@ -1,0 +1,89 @@
+<section class="bloque aparecer" aria-label="Historial de devoluciones">
+  <header class="bloque__cabecera">
+    <h1>Historial de devoluciones</h1>
+    <span class="etiqueta">DE03</span>
+  </header>
+  <p class="bloque__descripcion">
+    Trazabilidad de los libros regresados a la biblioteca. Filtra por usuario, libro o rango de
+    fechas.
+  </p>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="filtro-usuario">Usuario</label>
+      <select id="filtro-usuario" [ngModel]="usuarioId()" (ngModelChange)="usuarioId.set($event)">
+        <option value="">Todos los usuarios</option>
+        @for (usuario of usuarios(); track usuario.id) {
+          <option [value]="usuario.id">{{ usuario.nombre }} · {{ usuario.matricula }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-libro">Libro</label>
+      <select id="filtro-libro" [ngModel]="libroId()" (ngModelChange)="libroId.set($event)">
+        <option value="">Todos los libros</option>
+        @for (libro of libros(); track libro.id) {
+          <option [value]="libro.id">{{ libro.titulo }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-desde">Desde</label>
+      <input id="filtro-desde" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </div>
+
+    <div class="campo">
+      <label for="filtro-hasta">Hasta</label>
+      <input id="filtro-hasta" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </div>
+
+    <button type="button" class="boton boton--contorno" (click)="limpiarFiltros()">
+      Limpiar filtros
+    </button>
+  </div>
+
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th scope="col">Usuario</th>
+          <th scope="col">Libro</th>
+          <th scope="col">Vencía</th>
+          <th scope="col">Devuelto</th>
+          <th scope="col">Retraso</th>
+          <th scope="col">Multa</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (devolucion of devoluciones(); track devolucion.id) {
+          <tr>
+            <td>
+              <strong>{{ devolucion.usuario.nombre }}</strong>
+              <small>{{ devolucion.usuario.matricula }}</small>
+            </td>
+            <td>
+              <strong>{{ devolucion.libro.titulo }}</strong>
+              <small>{{ devolucion.libro.autor }}</small>
+            </td>
+            <td>{{ devolucion.fechaVencimiento }}</td>
+            <td>{{ devolucion.fechaDevolucion }}</td>
+            <td>
+              @if (devolucion.diasRetraso > 0) {
+                <span class="etiqueta etiqueta--tardia">{{ devolucion.diasRetraso }} día(s)</span>
+              } @else {
+                <span class="etiqueta etiqueta--celeste">A tiempo</span>
+              }
+            </td>
+            <td>{{ devolucion.montoMulta > 0 ? '$' + devolucion.montoMulta : '—' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="tabla__vacio">No hay devoluciones que coincidan con los filtros.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

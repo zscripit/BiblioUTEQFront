@@ -1,0 +1,97 @@
+.bloque {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  padding: 1.75rem;
+  box-shadow: var(--sombra-sm);
+}
+
+.bloque__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.bloque__descripcion {
+  color: var(--tinta-600);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  max-width: 68ch;
+}
+
+.alerta--tardia {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.tarjeta-seleccion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1.5px solid var(--azul-600);
+  border-radius: var(--radio-sm);
+  background: var(--azul-50);
+  margin-bottom: 1.25rem;
+}
+
+.tarjeta-seleccion strong {
+  display: block;
+  font-size: 0.94rem;
+  color: var(--tinta-900);
+}
+
+.tarjeta-seleccion small {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--tinta-600);
+}
+
+.lista-seleccionable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  padding: 0.5rem;
+}
+
+.lista-seleccionable button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radio-sm);
+  text-align: left;
+  transition: background var(--transicion);
+}
+
+.lista-seleccionable button:hover {
+  background: var(--azul-50);
+}
+
+.lista-seleccionable button strong {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--tinta-900);
+}
+
+.lista-seleccionable button small {
+  font-size: 0.78rem;
+  color: var(--tinta-600);
+}
+
+.lista-seleccionable__vacio {
+  padding: 1rem;
+  text-align: center;
+  color: var(--tinta-400);
+  font-size: 0.9rem;
+}

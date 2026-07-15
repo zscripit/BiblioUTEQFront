@@ -71,35 +71,6 @@
       </div>
     </section>
 
-    <!-- Acceso al panel de bibliotecario -->
-    <a
-      routerLink="/bibliotecario/prestamos/registrar"
-      class="acceso-staff aparecer"
-      aria-label="Ir al panel de bibliotecario para administrar préstamos"
-    >
-      <span class="acceso-staff__icono" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          <path d="M9 7h6M9 11h4" />
-        </svg>
-      </span>
-      <div class="acceso-staff__texto">
-        <span class="acceso-staff__etiqueta">Acceso de personal</span>
-        <strong>Panel de bibliotecario</strong>
-        <span class="acceso-staff__descripcion">
-          Registra préstamos, consulta préstamos activos e historial completo.
-        </span>
-      </div>
-      <span class="acceso-staff__flecha" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      </span>
-    </a>
-
     <!-- Resumen -->
     <section class="resumen" aria-label="Resumen de tu actividad">
       @for (dato of resumen; track dato.texto) {
