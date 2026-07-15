@@ -1,0 +1,84 @@
+<section class="bloque aparecer" aria-label="Registrar la devolución de un libro">
+  <header class="bloque__cabecera">
+    <h1>Registrar devolución</h1>
+    <span class="etiqueta">DE01 · DE02</span>
+  </header>
+  <p class="bloque__descripcion">
+    Al registrar la devolución se actualiza el préstamo a DEVUELTO y se incrementa el stock del
+    libro. Si la entrega es tardía, el sistema lo detecta automáticamente y notifica al servicio
+    de sanciones.
+  </p>
+
+  @if (mensaje()) {
+    <div class="alerta" [class.alerta--exito]="exito() && !tardia()" [class.alerta--error]="!exito()"
+      [class.alerta--tardia]="exito() && tardia()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        @if (exito() && !tardia()) {
+          <path d="M20 6L9 17l-5-5" />
+        } @else {
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4M12 16h.01" />
+        }
+      </svg>
+      <span>{{ mensaje() }}</span>
+    </div>
+  }
+
+  @if (prestamoSeleccionado(); as prestamo) {
+    <div class="tarjeta-seleccion">
+      <div>
+        <strong>{{ prestamo.libro.titulo }}</strong>
+        <small>{{ prestamo.libro.autor }}</small>
+        <small>Prestado a: {{ prestamo.usuario.nombre }} ({{ prestamo.usuario.matricula }})</small>
+        <small>Vence: {{ prestamo.fechaVencimiento }}</small>
+      </div>
+      <button type="button" class="boton boton--contorno" (click)="cambiarSeleccion()">
+        Cambiar
+      </button>
+    </div>
+
+    <button type="button" class="boton boton--primario" (click)="registrar()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5" />
+      </svg>
+      Registrar devolución
+    </button>
+  } @else {
+    <div class="campo">
+      <label for="buscar-prestamo">Buscar préstamo activo</label>
+      <div class="campo__control">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          id="buscar-prestamo"
+          type="text"
+          placeholder="Buscar por usuario, matrícula, título o autor..."
+          [ngModel]="buscarPrestamo()"
+          (ngModelChange)="buscarPrestamo.set($event)"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <ul class="lista-seleccionable">
+      @for (prestamo of prestamosActivos(); track prestamo.id) {
+        <li>
+          <button type="button" (click)="seleccionarPrestamo(prestamo.id)">
+            <div>
+              <strong>{{ prestamo.libro.titulo }}</strong>
+              <small>{{ prestamo.usuario.nombre }} · {{ prestamo.usuario.matricula }}</small>
+            </div>
+            <small>Vence: {{ prestamo.fechaVencimiento }}</small>
+          </button>
+        </li>
+      } @empty {
+        <li class="lista-seleccionable__vacio">No hay préstamos activos que coincidan.</li>
+      }
+    </ul>
+  }
+</section>
