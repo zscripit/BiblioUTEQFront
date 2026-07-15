@@ -7,6 +7,11 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    // El catálogo también depende de la sesión (misma razón que /home).
+    path: 'catalogo',
+    renderMode: RenderMode.Client,
+  },
+  {
     // Panel del bibliotecario (préstamos y devoluciones): también depende de la sesión.
     path: 'bibliotecario',
     renderMode: RenderMode.Client,

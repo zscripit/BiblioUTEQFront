@@ -54,6 +54,11 @@ export const routes: Routes = [
     title: 'Biblioteca UTEQ | Mi Biblioteca',
   },
   {
+    path: 'catalogo',
+    loadComponent: () => import('./features/catalogo/catalogo').then((m) => m.Catalogo),
+    title: 'Biblioteca UTEQ | Catálogo',
+  },
+  {
     // Panel del bibliotecario (EPIC05 préstamos + EPIC06 devoluciones)
     path: 'bibliotecario',
     loadComponent: () =>

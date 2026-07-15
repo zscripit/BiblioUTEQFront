@@ -16,6 +16,8 @@ export interface LibroCatalogo {
   id: string;
   titulo: string;
   autor: string;
+  categoria: string;
+  portada: string;
   ejemplaresDisponibles: number;
 }
 
@@ -94,18 +96,40 @@ export class PrestamosService {
   ]);
 
   private readonly _libros = signal<LibroCatalogo[]>([
-    { id: 'l1', titulo: 'Ingeniería de Software: Un Enfoque Práctico', autor: 'Roger S. Pressman', ejemplaresDisponibles: 2 },
-    { id: 'l2', titulo: 'Redes de Computadoras', autor: 'Andrew S. Tanenbaum', ejemplaresDisponibles: 1 },
-    { id: 'l3', titulo: 'Cálculo de Varias Variables', autor: 'James Stewart', ejemplaresDisponibles: 0 },
-    { id: 'l4', titulo: 'Clean Code', autor: 'Robert C. Martin', ejemplaresDisponibles: 3 },
-    { id: 'l5', titulo: 'Fundamentos de Bases de Datos', autor: 'Abraham Silberschatz', ejemplaresDisponibles: 2 },
+    { id: 'l20', titulo: 'Frankenstein', autor: 'Mary Shelley', categoria: 'Gótico clásico', portada: 'frankenstein.jpg', ejemplaresDisponibles: 3 },
+    { id: 'l21', titulo: 'El Extraño Caso del Dr. Jekyll y Mr. Hyde', autor: 'Robert Louis Stevenson', categoria: 'Gótico clásico', portada: 'dr-jekyll-y-mr-hyde.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l22', titulo: 'La Caída de la Casa Usher', autor: 'Edgar Allan Poe', categoria: 'Gótico clásico', portada: 'la-caida-de-la-casa-usher.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l23', titulo: 'Carmilla', autor: 'Sheridan Le Fanu', categoria: 'Gótico clásico', portada: 'carmilla.jpg', ejemplaresDisponibles: 0 },
+    { id: 'l24', titulo: 'La Maldición de Hill House', autor: 'Shirley Jackson', categoria: 'Terror psicológico', portada: 'la-maldicion-de-hill-house.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l25', titulo: 'El Resplandor', autor: 'Stephen King', categoria: 'Terror psicológico', portada: 'el-resplandor.jpg', ejemplaresDisponibles: 3 },
+    { id: 'l26', titulo: 'Otra Vuelta de Tuerca', autor: 'Henry James', categoria: 'Terror psicológico', portada: 'otra-vuelta-de-tuerca.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l27', titulo: 'Siempre Hemos Vivido en el Castillo', autor: 'Shirley Jackson', categoria: 'Terror psicológico', portada: 'siempre-hemos-vivido-en-el-castillo.jpg', ejemplaresDisponibles: 0 },
+    { id: 'l28', titulo: 'La Casa de los Espíritus', autor: 'Isabel Allende', categoria: 'Realismo mágico', portada: 'la-casa-de-los-espiritus.jpg', ejemplaresDisponibles: 4 },
+    { id: 'l29', titulo: 'Pedro Páramo', autor: 'Juan Rulfo', categoria: 'Realismo mágico', portada: 'pedro-paramo.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l30', titulo: 'Como Agua para Chocolate', autor: 'Laura Esquivel', categoria: 'Realismo mágico', portada: 'como-agua-para-chocolate.jpg', ejemplaresDisponibles: 3 },
+    { id: 'l31', titulo: 'El Túnel', autor: 'Ernesto Sabato', categoria: 'Realismo mágico', portada: 'el-tunel.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l32', titulo: 'American Gods', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'american-gods.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l33', titulo: 'Coraline', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'coraline.jpg', ejemplaresDisponibles: 3 },
+    { id: 'l34', titulo: 'El Libro del Cementerio', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'el-libro-del-cementerio.jpg', ejemplaresDisponibles: 0 },
+    { id: 'l35', titulo: 'Buenos Presagios', autor: 'Neil Gaiman y Terry Pratchett', categoria: 'Fantasía oscura', portada: 'buenos-presagios.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l36', titulo: 'It (Eso)', autor: 'Stephen King', categoria: 'Terror contemporáneo', portada: 'it-eso.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l37', titulo: 'La Feria de las Tinieblas', autor: 'Ray Bradbury', categoria: 'Terror contemporáneo', portada: 'la-feria-de-las-tinieblas.jpg', ejemplaresDisponibles: 4 },
+    { id: 'l38', titulo: 'House of Leaves', autor: 'Mark Z. Danielewski', categoria: 'Terror contemporáneo', portada: 'house-of-leaves.jpg', ejemplaresDisponibles: 0 },
+    { id: 'l39', titulo: 'La Casa', autor: 'Manuel Rivas', categoria: 'Terror contemporáneo', portada: 'la-casa.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l40', titulo: 'Orgullo y Prejuicio', autor: 'Jane Austen', categoria: 'Romance clásico', portada: 'orgullo-y-prejuicio.jpg', ejemplaresDisponibles: 3 },
+    { id: 'l41', titulo: 'Cumbres Borrascosas', autor: 'Emily Brontë', categoria: 'Romance clásico', portada: 'cumbres-borrascosas.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l42', titulo: 'Jane Eyre', autor: 'Charlotte Brontë', categoria: 'Romance clásico', portada: 'jane-eyre.jpg', ejemplaresDisponibles: 4 },
+    { id: 'l43', titulo: 'Ana Karenina', autor: 'León Tolstói', categoria: 'Romance clásico', portada: 'ana-karenina.jpg', ejemplaresDisponibles: 1 },
+    { id: 'l44', titulo: 'Tres Hombres en una Barca', autor: 'Jerome K. Jerome', categoria: 'Humor clásico', portada: 'tres-hombres-en-una-barca.jpg', ejemplaresDisponibles: 2 },
+    { id: 'l45', titulo: 'Las Aventuras de Mr. Pickwick', autor: 'Charles Dickens', categoria: 'Humor clásico', portada: 'las-aventuras-de-mr-pickwick.jpg', ejemplaresDisponibles: 0 },
+    { id: 'l46', titulo: 'Cándido', autor: 'Voltaire', categoria: 'Humor clásico', portada: 'candido.jpg', ejemplaresDisponibles: 3 },
   ]);
 
   private readonly _prestamos = signal<Prestamo[]>([
     {
       id: 'p1',
       usuarioId: 'u1',
-      libroId: 'l1',
+      libroId: 'l20',
       fechaPrestamo: sumarDias(hoyIso(), -10),
       fechaVencimiento: sumarDias(hoyIso(), 4),
       fechaDevolucion: null,
@@ -116,7 +140,7 @@ export class PrestamosService {
     {
       id: 'p2',
       usuarioId: 'u2',
-      libroId: 'l5',
+      libroId: 'l28',
       fechaPrestamo: sumarDias(hoyIso(), -20),
       fechaVencimiento: sumarDias(hoyIso(), -6),
       fechaDevolucion: sumarDias(hoyIso(), -7),
@@ -127,7 +151,7 @@ export class PrestamosService {
     {
       id: 'p3',
       usuarioId: 'u1',
-      libroId: 'l2',
+      libroId: 'l25',
       fechaPrestamo: sumarDias(hoyIso(), -30),
       fechaVencimiento: sumarDias(hoyIso(), -16),
       fechaDevolucion: null,
@@ -138,7 +162,7 @@ export class PrestamosService {
     {
       id: 'p4',
       usuarioId: 'u3',
-      libroId: 'l4',
+      libroId: 'l36',
       fechaPrestamo: sumarDias(hoyIso(), -25),
       fechaVencimiento: sumarDias(hoyIso(), -11),
       fechaDevolucion: sumarDias(hoyIso(), -5),
@@ -180,6 +204,27 @@ export class PrestamosService {
       (libro) =>
         libro.titulo.toLowerCase().includes(valor) || libro.autor.toLowerCase().includes(valor),
     );
+  }
+
+  /** Categorías distintas presentes en el catálogo, para el filtro. */
+  readonly categorias = computed(() =>
+    [...new Set(this._libros().map((libro) => libro.categoria))].sort(),
+  );
+
+  /** Catálogo público: búsqueda por título/autor, con filtro opcional de categoría. */
+  buscarCatalogo(termino: string, categoria?: string): LibroCatalogo[] {
+    const valor = termino.trim().toLowerCase();
+    return this._libros().filter((libro) => {
+      if (categoria && libro.categoria !== categoria) {
+        return false;
+      }
+      if (!valor) {
+        return true;
+      }
+      return (
+        libro.titulo.toLowerCase().includes(valor) || libro.autor.toLowerCase().includes(valor)
+      );
+    });
   }
 
   /** PR01 — Registra un préstamo solo si el usuario está ACTIVO, sin sanciones y hay ejemplares disponibles. */

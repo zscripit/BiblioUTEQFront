@@ -34,30 +34,30 @@ export class Home {
 
   protected readonly prestamos = [
     {
-      titulo: 'Ingeniería de Software: Un Enfoque Práctico',
-      autor: 'Roger S. Pressman',
+      titulo: 'Frankenstein',
+      autor: 'Mary Shelley',
       vence: '18 de julio de 2026',
       estado: 'En curso',
     },
     {
-      titulo: 'Redes de Computadoras',
-      autor: 'Andrew S. Tanenbaum',
+      titulo: 'El Resplandor',
+      autor: 'Stephen King',
       vence: '21 de julio de 2026',
       estado: 'En curso',
     },
     {
-      titulo: 'Cálculo de Varias Variables',
-      autor: 'James Stewart',
+      titulo: 'Cumbres Borrascosas',
+      autor: 'Emily Brontë',
       vence: '12 de julio de 2026',
       estado: 'Por vencer',
     },
   ];
 
   protected readonly recomendados = [
-    { titulo: 'Clean Code', autor: 'Robert C. Martin', categoria: 'Software' },
-    { titulo: 'El Universo en tu Mano', autor: 'Christophe Galfard', categoria: 'Divulgación' },
-    { titulo: 'Fundamentos de Bases de Datos', autor: 'Abraham Silberschatz', categoria: 'Software' },
-    { titulo: 'Cien Años de Soledad', autor: 'Gabriel García Márquez', categoria: 'Literatura' },
+    { titulo: 'Coraline', autor: 'Neil Gaiman', categoria: 'Fantasía oscura' },
+    { titulo: 'La Casa de los Espíritus', autor: 'Isabel Allende', categoria: 'Realismo mágico' },
+    { titulo: 'Orgullo y Prejuicio', autor: 'Jane Austen', categoria: 'Romance clásico' },
+    { titulo: 'Cándido', autor: 'Voltaire', categoria: 'Humor clásico' },
   ];
 
   constructor() {

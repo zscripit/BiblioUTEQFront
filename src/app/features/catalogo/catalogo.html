@@ -1,0 +1,122 @@
+<div class="panel">
+  <header class="panel__barra">
+    <div class="contenedor panel__barra-interior">
+      <div class="panel__izquierda">
+        <button
+          type="button"
+          class="hamburguesa"
+          (click)="alternarMenu()"
+          [class.hamburguesa--activa]="menuAbierto()"
+          [attr.aria-expanded]="menuAbierto()"
+          aria-label="Abrir o cerrar el menú"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <span class="panel__marca" aria-label="Biblioteca UTEQ — Catálogo">
+          <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              <path d="M9 7h6M9 11h4" />
+            </svg>
+          </span>
+          <strong>Biblioteca UTEQ · Catálogo</strong>
+        </span>
+      </div>
+
+      <div class="panel__chip">
+        <div class="panel__datos">
+          <strong>{{ usuario()?.nombre ?? 'Invitado' }}</strong>
+          <small>{{ usuario()?.correo ?? '' }}</small>
+        </div>
+        <span class="panel__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      </div>
+    </div>
+  </header>
+
+  <app-sidebar [abierto]="menuAbierto()" (cerrar)="menuAbierto.set(false)" />
+
+  <main class="contenedor panel__contenido">
+    <section class="cabecera-catalogo aparecer">
+      <h1>Catálogo de libros</h1>
+      <p>Busca por título, autor o categoría y descubre el material disponible.</p>
+
+      <div class="campo campo--buscador">
+        <div class="campo__control">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar por título o autor..."
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="filtros-categoria" role="group" aria-label="Filtrar por categoría">
+        @for (categoria of categorias(); track categoria) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--activo]="categoriaSeleccionada() === categoria"
+            (click)="seleccionarCategoria(categoria)"
+          >
+            {{ categoria }}
+          </button>
+        }
+      </div>
+    </section>
+
+    <div class="catalogo-grid">
+      @for (libro of libros(); track libro.id) {
+        <article class="libro-card">
+          <div class="libro-card__portada">
+            @if (imagenesConError().has(libro.id)) {
+              <div class="libro-card__marcador" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+              </div>
+            } @else {
+              <img
+                [src]="'/portadas/' + libro.portada"
+                [alt]="'Portada de ' + libro.titulo"
+                loading="lazy"
+                (error)="marcarImagenFallida(libro.id)"
+              />
+            }
+          </div>
+          <div class="libro-card__info">
+            <span class="etiqueta etiqueta--celeste">{{ libro.categoria }}</span>
+            <strong>{{ libro.titulo }}</strong>
+            <small>{{ libro.autor }}</small>
+            @if (libro.ejemplaresDisponibles > 0) {
+              <span class="disponibilidad disponibilidad--si">
+                {{ libro.ejemplaresDisponibles }} disponible(s)
+              </span>
+            } @else {
+              <span class="disponibilidad disponibilidad--no">Agotado</span>
+            }
+          </div>
+        </article>
+      } @empty {
+        <p class="catalogo-grid__vacio">No encontramos libros que coincidan con tu búsqueda.</p>
+      }
+    </div>
+  </main>
+
+  <footer class="panel__pie">
+    <p>© Biblioteca UTEQ · Universidad Tecnológica de Querétaro</p>
+  </footer>
+</div>
