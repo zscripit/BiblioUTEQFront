@@ -1,30 +1,94 @@
-<section class="mis-reservas">
-  <header class="mis-reservas__encabezado">
-    <div>
-      <p class="mis-reservas__eyebrow">Usuario</p>
-      <h2>Mis reservas</h2>
+<div class="panel">
+  <app-panel-header [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
+
+  <app-sidebar [abierto]="menuAbierto()" (cerrar)="menuAbierto.set(false)" />
+
+  <main class="contenedor panel__contenido">
+    <section class="mis-reservas">
+      <header class="mis-reservas__encabezado">
+        <div>
+          <p class="mis-reservas__eyebrow">Usuario</p>
+          <h2>Mis reservas</h2>
+        </div>
+      </header>
+
+  @if (mensaje()) {
+    <p class="alerta" [class.alerta--error]="!exito()" [class.alerta--exito]="exito()">{{ mensaje() }}</p>
+  }
+
+  <div class="campo">
+    <label for="buscar-libro">Reservar un libro</label>
+    <div class="campo__control">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input
+        id="buscar-libro"
+        type="text"
+        placeholder="Busca por título o autor..."
+        [ngModel]="buscarLibro()"
+        (ngModelChange)="buscarLibro.set($event)"
+        autocomplete="off"
+      />
     </div>
-  </header>
+  </div>
+
+  @if (librosParaReservar().length) {
+    <ul class="mis-reservas__lista">
+      @for (libro of librosParaReservar(); track libro.id) {
+        <li class="mis-reservas__card">
+          <div class="mis-reservas__info">
+            <h3>{{ libro.titulo }}</h3>
+            <p>{{ libro.autor }} · {{ libro.categoria }}</p>
+            <p>{{ libro.ejemplaresDisponibles }} ejemplar(es) disponible(s)</p>
+          </div>
+          <button type="button" class="boton boton--primario" (click)="reservar(libro.id)">
+            Reservar
+          </button>
+        </li>
+      }
+    </ul>
+  }
 
   <div class="mis-reservas__filtros" role="tablist" aria-label="Filtrar reservas">
-    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'Todos'" (click)="cambiarFiltro('Todos')">Todos</button>
-    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'Activa'" (click)="cambiarFiltro('Activa')">Activas</button>
-    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'Pendiente'" (click)="cambiarFiltro('Pendiente')">Pendientes</button>
-    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'Cancelada'" (click)="cambiarFiltro('Cancelada')">Canceladas</button>
+    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'TODAS'" (click)="cambiarFiltro('TODAS')">Todas</button>
+    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'ACTIVA'" (click)="cambiarFiltro('ACTIVA')">Activas</button>
+    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'CONVERTIDA'" (click)="cambiarFiltro('CONVERTIDA')">Convertidas</button>
+    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'CANCELADA'" (click)="cambiarFiltro('CANCELADA')">Canceladas</button>
+    <button type="button" class="mis-reservas__filtro" [class.mis-reservas__filtro--activo]="filtro() === 'EXPIRADA'" (click)="cambiarFiltro('EXPIRADA')">Expiradas</button>
   </div>
 
   <div class="mis-reservas__lista">
-    @for (reserva of reservasFiltradas(); track reserva.id) {
+    @for (reserva of misReservas(); track reserva.id) {
       <article class="mis-reservas__card">
         <div class="mis-reservas__info">
-          <h3>{{ reserva.curso }}</h3>
-          <p><strong>Fecha:</strong> {{ reserva.fecha }}</p>
-          <p><strong>Lugar:</strong> {{ reserva.lugar }}</p>
+          <h3>{{ reserva.libro?.titulo ?? 'Libro no disponible' }}</h3>
+          <p><strong>Reservado:</strong> {{ reserva.fechaReserva }}</p>
+          <p><strong>Recoger antes de:</strong> {{ reserva.fechaExpiracion }}</p>
         </div>
-        <span class="mis-reservas__estado" [class.mis-reservas__estado--activa]="reserva.estado === 'Activa'" [class.mis-reservas__estado--pendiente]="reserva.estado === 'Pendiente'" [class.mis-reservas__estado--cancelada]="reserva.estado === 'Cancelada'">
-          {{ reserva.estado }}
-        </span>
+        <div class="mis-reservas__acciones">
+          <span class="mis-reservas__estado"
+            [class.mis-reservas__estado--activa]="reserva.estado === 'ACTIVA'"
+            [class.mis-reservas__estado--convertida]="reserva.estado === 'CONVERTIDA'"
+            [class.mis-reservas__estado--cancelada]="reserva.estado === 'CANCELADA'"
+            [class.mis-reservas__estado--expirada]="reserva.estado === 'EXPIRADA'">
+            {{ reserva.estado }}
+          </span>
+          @if (reserva.estado === 'ACTIVA') {
+            <button type="button" class="boton boton--contorno" (click)="cancelar(reserva.id)">
+              Cancelar
+            </button>
+          }
+        </div>
       </article>
+    } @empty {
+      <p class="mis-reservas__vacio">No tienes reservas con este filtro.</p>
     }
   </div>
-</section>
+    </section>
+  </main>
+
+  <app-panel-footer />
+</div>

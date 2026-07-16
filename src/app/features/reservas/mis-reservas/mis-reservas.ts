@@ -1,33 +1,94 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Auth } from '../../../services/auth';
+import { Sidebar } from '../../../components/layouts/sidebar/sidebar';
+import { PanelHeader } from '../../../components/layouts/panel-header/panel-header';
+import { PanelFooter } from '../../../components/layouts/panel-footer/panel-footer';
+import { PrestamosService } from '../../prestamos/prestamos.service';
 
-interface Reserva {
-  id: number;
-  curso: string;
-  fecha: string;
-  estado: 'Activa' | 'Pendiente' | 'Cancelada';
-  lugar: string;
-}
+type FiltroEstado = 'TODAS' | 'ACTIVA' | 'CONVERTIDA' | 'CANCELADA' | 'EXPIRADA';
 
 @Component({
   selector: 'app-mis-reservas',
+  imports: [FormsModule, Sidebar, PanelHeader, PanelFooter],
   templateUrl: './mis-reservas.html',
   styleUrl: './mis-reservas.scss',
 })
 export class MisReservas {
-  protected readonly reservas = signal<Reserva[]>([
-    { id: 1, curso: 'Introducción a Angular', fecha: '14/07/2026', estado: 'Activa', lugar: 'Sala A' },
-    { id: 2, curso: 'Diseño UX', fecha: '18/07/2026', estado: 'Pendiente', lugar: 'Sala B' },
-    { id: 3, curso: 'Base de datos con MySQL', fecha: '10/07/2026', estado: 'Cancelada', lugar: 'Virtual' },
-  ]);
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+  private readonly prestamosService = inject(PrestamosService);
 
-  protected readonly filtro = signal<'Todos' | 'Activa' | 'Pendiente' | 'Cancelada'>('Todos');
+  protected readonly menuAbierto = signal(false);
+  protected readonly usuarioId = computed(() => this.auth.usuario()?.id ?? '');
 
-  protected readonly reservasFiltradas = signal<Reserva[]>(this.reservas());
+  protected readonly buscarLibro = signal('');
+  protected readonly filtro = signal<FiltroEstado>('TODAS');
+  protected readonly mensaje = signal('');
+  protected readonly exito = signal(false);
 
-  protected cambiarFiltro(estado: 'Todos' | 'Activa' | 'Pendiente' | 'Cancelada'): void {
+  protected readonly librosParaReservar = computed(() =>
+    this.buscarLibro().trim()
+      ? this.prestamosService.buscarLibros(this.buscarLibro()).filter((l) => l.ejemplaresDisponibles > 0)
+      : [],
+  );
+
+  protected readonly misReservas = computed(() => {
+    const id = this.usuarioId();
+    const estado = this.filtro();
+    return this.prestamosService
+      .reservas()
+      .filter((r) => r.usuarioId === id)
+      .filter((r) => estado === 'TODAS' || r.estado === estado)
+      .map((reserva) => ({
+        ...reserva,
+        libro: this.prestamosService.libros().find((l) => l.id === reserva.libroId) ?? null,
+      }))
+      .sort((a, b) => b.fechaReserva.localeCompare(a.fechaReserva));
+  });
+
+  constructor() {
+    // Solo front-end: si no hay sesión activa, regresamos al login.
+    if (!this.auth.estaAutenticado()) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
+    const id = this.usuarioId();
+    if (id) {
+      this.prestamosService.cargarReservasDeUsuario(id);
+    }
+  }
+
+  alternarMenu(): void {
+    this.menuAbierto.update((abierto) => !abierto);
+  }
+
+  cambiarFiltro(estado: FiltroEstado): void {
     this.filtro.set(estado);
-    this.reservasFiltradas.set(
-      estado === 'Todos' ? this.reservas() : this.reservas().filter((reserva) => reserva.estado === estado),
-    );
+  }
+
+  reservar(libroId: string): void {
+    const usuarioId = this.usuarioId();
+    if (!usuarioId) {
+      return;
+    }
+    this.mensaje.set('');
+    this.prestamosService.crearReserva(usuarioId, libroId).subscribe((resultado) => {
+      this.exito.set(resultado.ok);
+      this.mensaje.set(resultado.mensaje);
+      if (resultado.ok) {
+        this.buscarLibro.set('');
+      }
+    });
+  }
+
+  cancelar(reservaId: string): void {
+    this.mensaje.set('');
+    this.prestamosService.cancelarReserva(reservaId).subscribe((resultado) => {
+      this.exito.set(resultado.ok);
+      this.mensaje.set(resultado.mensaje);
+    });
   }
 }

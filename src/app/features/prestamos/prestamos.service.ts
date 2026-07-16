@@ -1,13 +1,24 @@
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { CatalogoService, Libro } from '../../services/catalogo.service';
+import { UsuarioAdmin, UsuariosAdminService } from '../../services/usuarios-admin';
 
 export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
 export type EstadoPrestamo = 'ACTIVO' | 'DEVUELTO' | 'VENCIDO';
+export type EstadoReserva = 'ACTIVA' | 'CANCELADA' | 'EXPIRADA' | 'CONVERTIDA';
+export type TipoNotificacion =
+  | 'PRESTAMO_AUTORIZADO'
+  | 'DEVOLUCION_REGISTRADA'
+  | 'SANCION_GENERADA'
+  | 'RESERVA_POR_EXPIRAR'
+  | 'RESERVA_CREADA'
+  | 'RESERVA_CANCELADA';
 
 export interface UsuarioBiblioteca {
   id: string;
   nombre: string;
-  matricula: string;
   correo: string;
   estado: EstadoUsuario;
   sancionesPendientes: number;
@@ -52,10 +63,19 @@ export interface Sancion {
 export interface NotificacionSistema {
   id: string;
   usuarioId: string;
-  tipo: 'PRESTAMO_AUTORIZADO' | 'DEVOLUCION_REGISTRADA' | 'SANCION_GENERADA' | 'RESERVA_POR_EXPIRAR';
+  tipo: TipoNotificacion;
   referenciaId: string;
   mensaje: string;
   fechaEnvio: string;
+}
+
+export interface ReservaLibro {
+  id: string;
+  usuarioId: string;
+  libroId: string;
+  estado: EstadoReserva;
+  fechaReserva: string;
+  fechaExpiracion: string;
 }
 
 export interface FiltroHistorial {
@@ -86,6 +106,12 @@ export interface ResultadoDevolucion {
   prestamo?: Prestamo;
 }
 
+export interface ResultadoReserva {
+  ok: boolean;
+  mensaje: string;
+  reserva?: ReservaLibro;
+}
+
 const MULTA_POR_DIA_TARDIO = 15;
 const DIA_MS = 24 * 60 * 60 * 1000;
 
@@ -93,213 +119,189 @@ function hoyIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function sumarDias(fechaIso: string, dias: number): string {
-  return new Date(new Date(fechaIso).getTime() + dias * DIA_MS).toISOString().slice(0, 10);
-}
-
 function diasEntre(fechaInicioIso: string, fechaFinIso: string): number {
   const diferencia = new Date(fechaFinIso).getTime() - new Date(fechaInicioIso).getTime();
   return Math.round(diferencia / DIA_MS);
 }
 
-function toUuid(id: string, prefixChar: 'u' | 'l' | 'p' | 's' | 'n'): string {
-  if (id.includes('-')) return id;
-  const num = id.slice(1);
-  const padded = num.padStart(12, '0');
-  const typeCode = prefixChar === 'u' ? '1' : prefixChar === 'l' ? '2' : prefixChar === 'p' ? '3' : prefixChar === 's' ? '4' : '5';
-  return `00000000-0000-0000-0000-${typeCode}${padded}`;
-}
-
-function fromUuid(uuid: string): string {
-  if (!uuid) return '';
-  const parts = uuid.split('-');
-  const lastPart = parts[parts.length - 1];
-  const typeCode = lastPart.charAt(0);
-  const num = parseInt(lastPart.slice(1), 10).toString();
-  const prefix = typeCode === '1' ? 'u' : typeCode === '2' ? 'l' : typeCode === '3' ? 'p' : typeCode === '4' ? 's' : 'n';
-  return `${prefix}${num}`;
-}
-
 /**
- * PR01-PR03 (EPIC05): administración de préstamos, solo front-end.
- * Los datos viven en memoria mediante signals; no hay backend todavía.
+ * Administración de préstamos, devoluciones, sanciones, notificaciones y reservas de libros.
+ * Los catálogos base (usuarios, libros) y las operaciones se respaldan contra los
+ * microservicios reales (ms-user-auth-register, ms-catalogo, ms-prestamos, ms-devoluciones,
+ * ms-notificaciones) vía el api-gateway.
  */
 @Injectable({ providedIn: 'root' })
 export class PrestamosService {
-  private readonly _usuarios = signal<UsuarioBiblioteca[]>([
-    { id: 'u1', nombre: 'Ana López Ramírez', matricula: '21DS045', correo: 'ana.lopez@uteq.edu.mx', estado: 'ACTIVO', sancionesPendientes: 0 },
-    { id: 'u2', nombre: 'Carlos Medina Ortiz', matricula: '20IS012', correo: 'carlos.medina@uteq.edu.mx', estado: 'ACTIVO', sancionesPendientes: 0 },
-    { id: 'u3', nombre: 'Diana Torres Vega', matricula: '22RT033', correo: 'diana.torres@uteq.edu.mx', estado: 'ACTIVO', sancionesPendientes: 1 },
-    { id: 'u4', nombre: 'Emilio Salas Cruz', matricula: '19DS098', correo: 'emilio.salas@uteq.edu.mx', estado: 'INACTIVO', sancionesPendientes: 0 },
-  ]);
+  private readonly http = inject(HttpClient);
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly usuariosAdminService = inject(UsuariosAdminService);
+  private readonly API_URL = 'http://localhost:8080/api/v1';
 
-  private readonly _libros = signal<LibroCatalogo[]>([
-    { id: 'l20', titulo: 'Frankenstein', autor: 'Mary Shelley', categoria: 'Gótico clásico', portada: 'Frank.png', ejemplaresDisponibles: 3 },
-    { id: 'l21', titulo: 'El Extraño Caso del Dr. Jekyll y Mr. Hyde', autor: 'Robert Louis Stevenson', categoria: 'Gótico clásico', portada: 'extraño.png', ejemplaresDisponibles: 2 },
-    { id: 'l22', titulo: 'La Caída de la Casa Usher', autor: 'Edgar Allan Poe', categoria: 'Gótico clásico', portada: 'usher.png', ejemplaresDisponibles: 1 },
-    { id: 'l23', titulo: 'Carmilla', autor: 'Sheridan Le Fanu', categoria: 'Gótico clásico', portada: 'carmilla.png', ejemplaresDisponibles: 0 },
-    { id: 'l24', titulo: 'La Maldición de Hill House', autor: 'Shirley Jackson', categoria: 'Terror psicológico', portada: 'hill.png', ejemplaresDisponibles: 2 },
-    { id: 'l25', titulo: 'El Resplandor', autor: 'Stephen King', categoria: 'Terror psicológico', portada: 'resplandor.png', ejemplaresDisponibles: 3 },
-    { id: 'l26', titulo: 'Otra Vuelta de Tuerca', autor: 'Henry James', categoria: 'Terror psicológico', portada: 'tuerca.png', ejemplaresDisponibles: 1 },
-    { id: 'l27', titulo: 'Siempre Hemos Vivido en el Castillo', autor: 'Shirley Jackson', categoria: 'Terror psicológico', portada: 'castillo.png', ejemplaresDisponibles: 0 },
-    { id: 'l28', titulo: 'La Casa de los Espíritus', autor: 'Isabel Allende', categoria: 'Realismo mágico', portada: 'espiritus.png', ejemplaresDisponibles: 4 },
-    { id: 'l29', titulo: 'Pedro Páramo', autor: 'Juan Rulfo', categoria: 'Realismo mágico', portada: 'pedro.png', ejemplaresDisponibles: 2 },
-    { id: 'l30', titulo: 'Como Agua para Chocolate', autor: 'Laura Esquivel', categoria: 'Realismo mágico', portada: 'agua.png', ejemplaresDisponibles: 3 },
-    { id: 'l31', titulo: 'El Túnel', autor: 'Ernesto Sabato', categoria: 'Realismo mágico', portada: 'tunel.png', ejemplaresDisponibles: 1 },
-    { id: 'l32', titulo: 'American Gods', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'american.png', ejemplaresDisponibles: 2 },
-    { id: 'l33', titulo: 'Coraline', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'coraline.png', ejemplaresDisponibles: 3 },
-    { id: 'l34', titulo: 'El Libro del Cementerio', autor: 'Neil Gaiman', categoria: 'Fantasía oscura', portada: 'cementerio.png', ejemplaresDisponibles: 0 },
-    { id: 'l35', titulo: 'Buenos Presagios', autor: 'Neil Gaiman y Terry Pratchett', categoria: 'Fantasía oscura', portada: 'presagios.png', ejemplaresDisponibles: 1 },
-    { id: 'l36', titulo: 'It (Eso)', autor: 'Stephen King', categoria: 'Terror contemporáneo', portada: 'it.png', ejemplaresDisponibles: 2 },
-    { id: 'l37', titulo: 'La Feria de las Tinieblas', autor: 'Ray Bradbury', categoria: 'Terror contemporáneo', portada: 'feria.png', ejemplaresDisponibles: 4 },
-    { id: 'l38', titulo: 'House of Leaves', autor: 'Mark Z. Danielewski', categoria: 'Terror contemporáneo', portada: 'house.png', ejemplaresDisponibles: 0 },
-    { id: 'l39', titulo: 'La Casa', autor: 'Manuel Rivas', categoria: 'Terror contemporáneo', portada: 'casa.png', ejemplaresDisponibles: 1 },
-    { id: 'l40', titulo: 'Orgullo y Prejuicio', autor: 'Jane Austen', categoria: 'Romance clásico', portada: 'orgullo.png', ejemplaresDisponibles: 3 },
-    { id: 'l41', titulo: 'Cumbres Borrascosas', autor: 'Emily Brontë', categoria: 'Romance clásico', portada: 'cumbres.png', ejemplaresDisponibles: 2 },
-    { id: 'l42', titulo: 'Jane Eyre', autor: 'Charlotte Brontë', categoria: 'Romance clásico', portada: 'jane.png', ejemplaresDisponibles: 4 },
-    { id: 'l43', titulo: 'Ana Karenina', autor: 'León Tolstói', categoria: 'Romance clásico', portada: 'ana.png', ejemplaresDisponibles: 1 },
-    { id: 'l44', titulo: 'Tres Hombres en una Barca', autor: 'Jerome K. Jerome', categoria: 'Humor clásico', portada: 'barca.png', ejemplaresDisponibles: 2 },
-    { id: 'l45', titulo: 'Las Aventuras de Mr. Pickwick', autor: 'Charles Dickens', categoria: 'Humor clásico', portada: 'aventuras.png', ejemplaresDisponibles: 0 },
-    { id: 'l46', titulo: 'Cándido', autor: 'Voltaire', categoria: 'Humor clásico', portada: 'candido.png', ejemplaresDisponibles: 3 },
-  ]);
-
-  private readonly _prestamos = signal<Prestamo[]>([
-    {
-      id: 'p1',
-      usuarioId: 'u1',
-      libroId: 'l20',
-      fechaPrestamo: sumarDias(hoyIso(), -10),
-      fechaVencimiento: sumarDias(hoyIso(), 4),
-      fechaDevolucion: null,
-      estado: 'ACTIVO',
-      diasRetraso: 0,
-      montoMulta: 0,
-    },
-    {
-      id: 'p2',
-      usuarioId: 'u2',
-      libroId: 'l28',
-      fechaPrestamo: sumarDias(hoyIso(), -20),
-      fechaVencimiento: sumarDias(hoyIso(), -6),
-      fechaDevolucion: sumarDias(hoyIso(), -7),
-      estado: 'DEVUELTO',
-      diasRetraso: 0,
-      montoMulta: 0,
-    },
-    {
-      id: 'p3',
-      usuarioId: 'u1',
-      libroId: 'l25',
-      fechaPrestamo: sumarDias(hoyIso(), -30),
-      fechaVencimiento: sumarDias(hoyIso(), -16),
-      fechaDevolucion: null,
-      estado: 'VENCIDO',
-      diasRetraso: 0,
-      montoMulta: 0,
-    },
-    {
-      id: 'p4',
-      usuarioId: 'u3',
-      libroId: 'l36',
-      fechaPrestamo: sumarDias(hoyIso(), -25),
-      fechaVencimiento: sumarDias(hoyIso(), -11),
-      fechaDevolucion: sumarDias(hoyIso(), -5),
-      estado: 'DEVUELTO',
-      diasRetraso: 6,
-      montoMulta: 90,
-    },
-  ]);
-
-  private readonly _sanciones = signal<Sancion[]>([
-    {
-      id: 's1',
-      usuarioId: 'u1',
-      prestamoId: 'p3',
-      monto: 150,
-      estado: 'PENDIENTE',
-      fechaGeneracion: sumarDias(hoyIso(), -16),
-      fechaPago: null,
-    },
-    {
-      id: 's2',
-      usuarioId: 'u3',
-      prestamoId: 'p4',
-      monto: 90,
-      estado: 'PAGADA',
-      fechaGeneracion: sumarDias(hoyIso(), -5),
-      fechaPago: sumarDias(hoyIso(), -5),
-    }
-  ]);
-
-  private readonly _notificaciones = signal<NotificacionSistema[]>([
-    {
-      id: 'n1',
-      usuarioId: 'u1',
-      tipo: 'PRESTAMO_AUTORIZADO',
-      referenciaId: 'p1',
-      mensaje: 'Tu préstamo del libro Frankenstein ha sido autorizado.',
-      fechaEnvio: sumarDias(hoyIso(), -10),
-    },
-    {
-      id: 'n2',
-      usuarioId: 'u3',
-      tipo: 'SANCION_GENERADA',
-      referenciaId: 'p4',
-      mensaje: 'Se ha aplicado una multa de $90.00 a tu cuenta por entrega tardía.',
-      fechaEnvio: sumarDias(hoyIso(), -5),
-    }
-  ]);
+  private readonly _usuarios = signal<UsuarioBiblioteca[]>([]);
+  private readonly _libros = signal<LibroCatalogo[]>([]);
+  private readonly _prestamos = signal<Prestamo[]>([]);
+  private readonly _sanciones = signal<Sancion[]>([]);
+  private readonly _notificaciones = signal<NotificacionSistema[]>([]);
+  private readonly _reservas = signal<ReservaLibro[]>([]);
 
   readonly usuarios = this._usuarios.asReadonly();
   readonly libros = this._libros.asReadonly();
   readonly prestamos = this._prestamos.asReadonly();
   readonly sanciones = this._sanciones.asReadonly();
   readonly notificaciones = this._notificaciones.asReadonly();
-
-  private readonly http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost:8080/api/v1';
+  readonly reservas = this._reservas.asReadonly();
 
   constructor() {
-    this.cargarDatosDesdeBackend();
+    // El catálogo y las sanciones propias del usuario autenticado son de lectura abierta.
+    this.cargarCatalogo();
+    this.cargarSanciones();
   }
 
-  private cargarDatosDesdeBackend() {
-    this.http.get<any[]>(`${this.API_URL}/sanciones`).subscribe({
-      next: (data) => {
-        const sancionesMapeadas: Sancion[] = data.map((s) => ({
-          id: fromUuid(s.id),
-          usuarioId: fromUuid(s.usuarioId),
-          prestamoId: fromUuid(s.prestamoId),
-          monto: s.monto,
-          estado: s.estado,
-          fechaGeneracion: s.fechaGeneracion ? s.fechaGeneracion.slice(0, 10) : hoyIso(),
-          fechaPago: s.fechaPago ? s.fechaPago.slice(0, 10) : null,
-        }));
-        this._sanciones.set(sancionesMapeadas);
-      },
-      error: (err) => console.error('Error al cargar sanciones del backend:', err)
+  private cargarCatalogo(): void {
+    this.catalogoService.listar().subscribe({
+      next: (libros) => this._libros.set(libros.map((l) => this.mapLibro(l))),
+      error: (err) => console.error('Error al cargar el catálogo:', err),
     });
+  }
 
-    this._usuarios().forEach((u) => {
-      const uuid = toUuid(u.id, 'u');
-      this.http.get<any[]>(`${this.API_URL}/notificaciones/usuario/${uuid}`).subscribe({
-        next: (data) => {
-          const notifsMapeadas: NotificacionSistema[] = data.map((n) => ({
-            id: fromUuid(n.id),
-            usuarioId: fromUuid(n.usuarioId),
-            tipo: n.tipo,
-            referenciaId: fromUuid(n.referenciaId),
-            mensaje: n.mensaje,
-            fechaEnvio: n.fechaEnvio ? n.fechaEnvio.slice(0, 10) : hoyIso(),
-          }));
-          this._notificaciones.update((lista) => {
-            const limpias = lista.filter((item) => item.usuarioId !== u.id);
-            return [...limpias, ...notifsMapeadas];
-          });
-        },
-        error: (err) => console.error(`Error al cargar notificaciones para ${u.nombre}:`, err)
-      });
+  private mapLibro(libro: Libro): LibroCatalogo {
+    return {
+      id: libro.id,
+      titulo: libro.titulo,
+      autor: libro.autor,
+      categoria: libro.categoria,
+      portada: libro.tienePortada ? this.catalogoService.portadaUrl(libro.id) : '',
+      ejemplaresDisponibles: libro.stock - libro.stockReservado,
+    };
+  }
+
+  /** Listado completo de usuarios de la biblioteca (requiere rol ADMINISTRADOR en el backend). */
+  cargarUsuarios(): void {
+    this.usuariosAdminService.listar().subscribe({
+      next: (usuarios) => this._usuarios.set(usuarios.map((u) => this.mapUsuario(u))),
+      error: (err) => console.error('Error al cargar usuarios:', err),
     });
+  }
+
+  private mapUsuario(usuario: UsuarioAdmin): UsuarioBiblioteca {
+    return {
+      id: usuario.id,
+      nombre: usuario.nombreCompleto,
+      correo: usuario.email,
+      estado: usuario.activo ? 'ACTIVO' : 'INACTIVO',
+      sancionesPendientes: this._sanciones().filter(
+        (s) => s.usuarioId === usuario.id && s.estado === 'PENDIENTE',
+      ).length,
+    };
+  }
+
+  private cargarSanciones(): void {
+    this.http.get<any[]>(`${this.API_URL}/sanciones`).subscribe({
+      next: (data) => this._sanciones.set(data.map((s) => this.mapSancion(s))),
+      error: (err) => console.error('Error al cargar sanciones del backend:', err),
+    });
+  }
+
+  private mapSancion(s: any): Sancion {
+    return {
+      id: s.id,
+      usuarioId: s.usuarioId,
+      prestamoId: s.prestamoId,
+      monto: s.monto,
+      estado: s.estado,
+      fechaGeneracion: s.fechaGeneracion ? s.fechaGeneracion.slice(0, 10) : hoyIso(),
+      fechaPago: s.fechaPago ? s.fechaPago.slice(0, 10) : null,
+    };
+  }
+
+  /** Listado completo de préstamos (requiere rol ADMINISTRADOR en el backend). */
+  cargarPrestamos(): void {
+    this.http.get<any[]>(`${this.API_URL}/prestamos`).subscribe({
+      next: (data) => this._prestamos.set(data.map((p) => this.mapPrestamo(p))),
+      error: (err) => console.error('Error al cargar préstamos:', err),
+    });
+  }
+
+  /** Préstamos del usuario indicado (autoservicio: cualquier usuario autenticado puede ver los suyos). */
+  cargarPrestamosDeUsuario(usuarioId: string): void {
+    this.http.get<any[]>(`${this.API_URL}/prestamos/usuario/${usuarioId}`).subscribe({
+      next: (data) => {
+        const mapeados = data.map((p) => this.mapPrestamo(p));
+        this._prestamos.update((lista) => [
+          ...lista.filter((p) => p.usuarioId !== usuarioId),
+          ...mapeados,
+        ]);
+      },
+      error: (err) => console.error('Error al cargar tus préstamos:', err),
+    });
+  }
+
+  private mapPrestamo(p: any): Prestamo {
+    const fechaVencimiento = p.fechaLimite.slice(0, 10);
+    const estado: EstadoPrestamo =
+      p.estado === 'ACTIVO' && fechaVencimiento < hoyIso() ? 'VENCIDO' : p.estado;
+
+    return {
+      id: p.id,
+      usuarioId: p.usuarioId,
+      libroId: p.libroId,
+      fechaPrestamo: p.fechaPrestamo.slice(0, 10),
+      fechaVencimiento,
+      fechaDevolucion: null,
+      estado,
+      diasRetraso: estado === 'VENCIDO' ? diasEntre(fechaVencimiento, hoyIso()) : 0,
+      montoMulta: 0,
+    };
+  }
+
+  /** Notificaciones del usuario indicado (el propio usuario autenticado, normalmente). */
+  cargarNotificacionesDeUsuario(usuarioId: string): void {
+    this.http.get<any[]>(`${this.API_URL}/notificaciones/usuario/${usuarioId}`).subscribe({
+      next: (data) => {
+        const mapeadas = data.map((n) => this.mapNotificacion(n));
+        this._notificaciones.update((lista) => [
+          ...lista.filter((item) => item.usuarioId !== usuarioId),
+          ...mapeadas,
+        ]);
+      },
+      error: (err) => console.error('Error al cargar notificaciones:', err),
+    });
+  }
+
+  private mapNotificacion(n: any): NotificacionSistema {
+    return {
+      id: n.id,
+      usuarioId: n.usuarioId,
+      tipo: n.tipo,
+      referenciaId: n.referenciaId,
+      mensaje: n.mensaje,
+      fechaEnvio: n.fechaEnvio ? n.fechaEnvio.slice(0, 10) : hoyIso(),
+    };
+  }
+
+  /** Reservas activas del usuario indicado. */
+  cargarReservasDeUsuario(usuarioId: string): void {
+    this.http.get<any[]>(`${this.API_URL}/reservas/usuario/${usuarioId}/activas`).subscribe({
+      next: (data) => {
+        const mapeadas = data.map((r) => this.mapReserva(r));
+        this._reservas.update((lista) => [
+          ...lista.filter((r) => r.usuarioId !== usuarioId),
+          ...mapeadas,
+        ]);
+      },
+      error: (err) => console.error('Error al cargar reservas:', err),
+    });
+  }
+
+  private mapReserva(r: any): ReservaLibro {
+    return {
+      id: r.id,
+      usuarioId: r.usuarioId,
+      libroId: r.libroId,
+      estado: r.estado,
+      fechaReserva: r.fechaReserva ? r.fechaReserva.slice(0, 10) : hoyIso(),
+      fechaExpiracion: r.fechaExpiracion ? r.fechaExpiracion.slice(0, 10) : hoyIso(),
+    };
   }
 
   readonly historialDetallado = computed<PrestamoDetallado[]>(() =>
@@ -317,7 +319,7 @@ export class PrestamosService {
     return this._usuarios().filter(
       (usuario) =>
         usuario.nombre.toLowerCase().includes(valor) ||
-        usuario.matricula.toLowerCase().includes(valor),
+        usuario.correo.toLowerCase().includes(valor),
     );
   }
 
@@ -354,52 +356,40 @@ export class PrestamosService {
   }
 
   /** PR01 — Registra un préstamo solo si el usuario está ACTIVO, sin sanciones y hay ejemplares disponibles. */
-  registrarPrestamo(usuarioId: string, libroId: string, diasPlazo = 7): ResultadoRegistro {
+  registrarPrestamo(usuarioId: string, libroId: string, diasPlazo = 7): Observable<ResultadoRegistro> {
     const usuario = this._usuarios().find((u) => u.id === usuarioId);
     const libro = this._libros().find((l) => l.id === libroId);
 
     if (!usuario) {
-      return { ok: false, mensaje: 'Selecciona un usuario válido.' };
+      return of({ ok: false, mensaje: 'Selecciona un usuario válido.' });
     }
     if (!libro) {
-      return { ok: false, mensaje: 'Selecciona un libro válido.' };
+      return of({ ok: false, mensaje: 'Selecciona un libro válido.' });
     }
     if (usuario.estado !== 'ACTIVO') {
-      return { ok: false, mensaje: `${usuario.nombre} no tiene una cuenta ACTIVA.` };
+      return of({ ok: false, mensaje: `${usuario.nombre} no tiene una cuenta ACTIVA.` });
     }
     if (usuario.sancionesPendientes > 0) {
-      return { ok: false, mensaje: `${usuario.nombre} tiene sanciones pendientes por resolver.` };
+      return of({ ok: false, mensaje: `${usuario.nombre} tiene sanciones pendientes por resolver.` });
     }
     if (libro.ejemplaresDisponibles <= 0) {
-      return { ok: false, mensaje: `No hay ejemplares disponibles de "${libro.titulo}".` };
+      return of({ ok: false, mensaje: `No hay ejemplares disponibles de "${libro.titulo}".` });
     }
 
-    const fechaPrestamo = hoyIso();
-    const prestamo: Prestamo = {
-      id: `p${crypto.randomUUID()}`,
-      usuarioId,
-      libroId,
-      fechaPrestamo,
-      fechaVencimiento: sumarDias(fechaPrestamo, diasPlazo),
-      fechaDevolucion: null,
-      estado: 'ACTIVO',
-      diasRetraso: 0,
-      montoMulta: 0,
-    };
+    const fechaLimite = new Date(Date.now() + diasPlazo * DIA_MS).toISOString();
+    const payload = { usuarioId, libroId, fechaLimite };
 
-    this._prestamos.update((lista) => [prestamo, ...lista]);
-    this._libros.update((lista) =>
-      lista.map((l) => (l.id === libroId ? { ...l, ejemplaresDisponibles: l.ejemplaresDisponibles - 1 } : l)),
+    return this.http.post<any>(`${this.API_URL}/prestamos`, payload).pipe(
+      map((data) => {
+        const prestamo = this.mapPrestamo(data);
+        this._prestamos.update((lista) => [prestamo, ...lista]);
+        this.ajustarDisponibilidad(libroId, -1);
+        return { ok: true, mensaje: `Préstamo registrado para ${usuario.nombre}.`, prestamo };
+      }),
+      catchError((err) =>
+        of({ ok: false, mensaje: err.error?.error ?? 'No se pudo registrar el préstamo.' }),
+      ),
     );
-
-    this.enviarNotificacion(
-      usuarioId,
-      'PRESTAMO_AUTORIZADO',
-      prestamo.id,
-      `Tu préstamo del libro "${libro.titulo}" ha sido autorizado. Vence el ${prestamo.fechaVencimiento}.`
-    );
-
-    return { ok: true, mensaje: `Préstamo registrado para ${usuario.nombre}.`, prestamo };
   }
 
   /** PR02 — Préstamos con estado ACTIVO de un usuario específico. */
@@ -435,142 +425,130 @@ export class PrestamosService {
     return activos.filter(
       (prestamo) =>
         prestamo.usuario.nombre.toLowerCase().includes(valor) ||
-        prestamo.usuario.matricula.toLowerCase().includes(valor) ||
+        prestamo.usuario.correo.toLowerCase().includes(valor) ||
         prestamo.libro.titulo.toLowerCase().includes(valor) ||
         prestamo.libro.autor.toLowerCase().includes(valor),
     );
   }
 
   /**
-   * DE01/DE02 — Registra la devolución de un préstamo activo: actualiza su estado a DEVUELTO,
-   * incrementa el stock del libro y, si detecta retraso, notifica al servicio de sanciones
-   * (simulado) generando la multa correspondiente.
+   * DE01/DE02 — Registra la devolución de un préstamo activo contra ms-devoluciones, que a su
+   * vez marca el préstamo como DEVUELTO y genera la sanción correspondiente si hay retraso.
    */
-  registrarDevolucion(prestamoId: string): ResultadoDevolucion {
+  registrarDevolucion(prestamoId: string): Observable<ResultadoDevolucion> {
     const prestamo = this._prestamos().find((p) => p.id === prestamoId);
     if (!prestamo) {
-      return { ok: false, mensaje: 'Selecciona un préstamo válido.', tardia: false, diasRetraso: 0, montoMulta: 0 };
+      return of({ ok: false, mensaje: 'Selecciona un préstamo válido.', tardia: false, diasRetraso: 0, montoMulta: 0 });
     }
     if (prestamo.estado !== 'ACTIVO' && prestamo.estado !== 'VENCIDO') {
-      return { ok: false, mensaje: 'Este préstamo ya fue devuelto.', tardia: false, diasRetraso: 0, montoMulta: 0 };
+      return of({ ok: false, mensaje: 'Este préstamo ya fue devuelto.', tardia: false, diasRetraso: 0, montoMulta: 0 });
     }
 
-    const usuario = this._usuarios().find((u) => u.id === prestamo.usuarioId);
-    const libro = this._libros().find((l) => l.id === prestamo.libroId);
-    const fechaDevolucion = hoyIso();
-    const diasRetraso = Math.max(0, diasEntre(prestamo.fechaVencimiento, fechaDevolucion));
-    const tardia = diasRetraso > 0;
-    const montoMulta = tardia ? diasRetraso * MULTA_POR_DIA_TARDIO : 0;
+    return this.http.post<any>(`${this.API_URL}/devoluciones`, { prestamoId }).pipe(
+      map((data) => {
+        const tardia = !!data.tardia;
+        const diasRetraso = data.diasRetraso ?? 0;
+        const montoMulta = tardia ? diasRetraso * MULTA_POR_DIA_TARDIO : 0;
+        const fechaDevolucion = data.fechaDevolucion ? String(data.fechaDevolucion).slice(0, 10) : hoyIso();
 
-    // Actualización local para UI instantánea
-    this._prestamos.update((lista) =>
-      lista.map((p) =>
-        p.id === prestamoId
-          ? { ...p, estado: 'DEVUELTO', fechaDevolucion, diasRetraso, montoMulta }
-          : p,
+        this._prestamos.update((lista) =>
+          lista.map((p) =>
+            p.id === prestamoId ? { ...p, estado: 'DEVUELTO', fechaDevolucion, diasRetraso, montoMulta } : p,
+          ),
+        );
+        this.ajustarDisponibilidad(prestamo.libroId, 1);
+
+        // La devolución pudo generar una sanción y una notificación en el backend; sincronizamos.
+        this.cargarSanciones();
+        this.cargarNotificacionesDeUsuario(prestamo.usuarioId);
+
+        const mensaje = tardia
+          ? `Devolución registrada con ${diasRetraso} día(s) de retraso. Se aplicó una multa de $${montoMulta}.`
+          : `Devolución registrada a tiempo.`;
+
+        return {
+          ok: true,
+          mensaje,
+          tardia,
+          diasRetraso,
+          montoMulta,
+          prestamo: { ...prestamo, estado: 'DEVUELTO' as const, fechaDevolucion, diasRetraso, montoMulta },
+        };
+      }),
+      catchError((err) =>
+        of({
+          ok: false,
+          mensaje: err.error?.error ?? 'No se pudo registrar la devolución.',
+          tardia: false,
+          diasRetraso: 0,
+          montoMulta: 0,
+        }),
       ),
     );
-    this._libros.update((lista) =>
-      lista.map((l) =>
-        l.id === prestamo.libroId ? { ...l, ejemplaresDisponibles: l.ejemplaresDisponibles + 1 } : l,
-      ),
-    );
-
-    // LLAMADA HTTP A DEVOLUCIONES EN BACKEND
-    const payload = {
-      prestamoId: toUuid(prestamoId, 'p')
-    };
-    this.http.post<any>(`${this.API_URL}/devoluciones`, payload).subscribe({
-      next: () => {
-        // Recargar desde backend para sincronizar notificaciones y multas
-        this.cargarDatosDesdeBackend();
-      },
-      error: (err) => console.error('Error al registrar devolución en backend:', err)
-    });
-
-    const mensaje = tardia
-      ? `Devolución registrada con ${diasRetraso} día(s) de retraso. Se aplicó una multa de $${montoMulta}.`
-      : `Devolución registrada a tiempo.`;
-
-    return {
-      ok: true,
-      mensaje,
-      tardia,
-      diasRetraso,
-      montoMulta,
-      prestamo: { ...prestamo, estado: 'DEVUELTO', fechaDevolucion, diasRetraso, montoMulta },
-    };
   }
 
   pagarSancion(sancionId: string): void {
-    const sUuid = toUuid(sancionId, 's');
-    this.http.put<any>(`${this.API_URL}/sanciones/${sUuid}/pagar`, {}).subscribe({
+    this.http.put<any>(`${this.API_URL}/sanciones/${sancionId}/pagar`, {}).subscribe({
       next: () => {
         this._sanciones.update((lista) =>
           lista.map((s) => {
             if (s.id === sancionId) {
-              // rehabilitar usuario
               this._usuarios.update((users) =>
                 users.map((u) =>
                   u.id === s.usuarioId
                     ? { ...u, sancionesPendientes: Math.max(0, u.sancionesPendientes - 1) }
-                    : u
-                )
+                    : u,
+                ),
               );
-              return { ...s, estado: 'PAGADA', fechaPago: hoyIso() };
+              return { ...s, estado: 'PAGADA' as const, fechaPago: hoyIso() };
             }
             return s;
-          })
+          }),
         );
       },
-      error: (err) => console.error('Error al registrar pago de sanción en backend:', err)
+      error: (err) => console.error('Error al registrar pago de sanción en backend:', err),
     });
   }
 
-  crearSancion(usuarioId: string, prestamoId: string, monto: number): void {
-    const payload = {
-      usuarioId: toUuid(usuarioId, 'u'),
-      prestamoId: toUuid(prestamoId, 'p'),
-      monto
-    };
-    this.http.post<any>(`${this.API_URL}/sanciones`, payload).subscribe({
-      next: (res) => {
-        const nuevaSancion: Sancion = {
-          id: fromUuid(res.id),
-          usuarioId: fromUuid(res.usuarioId),
-          prestamoId: fromUuid(res.prestamoId),
-          monto: res.monto,
-          estado: res.estado,
-          fechaGeneracion: res.fechaGeneracion ? res.fechaGeneracion.slice(0, 10) : hoyIso(),
-          fechaPago: null
-        };
-        this._sanciones.update((lista) => [nuevaSancion, ...lista]);
-      },
-      error: (err) => console.error('Error al registrar sanción en el backend:', err)
-    });
+  /** Reserva un libro para el usuario indicado (aparta un ejemplar disponible). */
+  crearReserva(usuarioId: string, libroId: string): Observable<ResultadoReserva> {
+    return this.http.post<any>(`${this.API_URL}/reservas`, { usuarioId, libroId }).pipe(
+      map((data) => {
+        const reserva = this.mapReserva(data);
+        this._reservas.update((lista) => [reserva, ...lista]);
+        this.ajustarDisponibilidad(libroId, -1);
+        return { ok: true, mensaje: 'Reserva registrada correctamente.', reserva };
+      }),
+      catchError((err) =>
+        of({ ok: false, mensaje: err.error?.error ?? 'No se pudo registrar la reserva.' }),
+      ),
+    );
   }
 
-  enviarNotificacion(usuarioId: string, tipo: 'PRESTAMO_AUTORIZADO' | 'DEVOLUCION_REGISTRADA' | 'SANCION_GENERADA' | 'RESERVA_POR_EXPIRAR', referenciaId: string, mensaje: string): void {
-    const payload = {
-      usuarioId: toUuid(usuarioId, 'u'),
-      tipo,
-      referenciaId: toUuid(referenciaId, 'p'),
-      mensaje
-    };
-    this.http.post<any>(`${this.API_URL}/notificaciones`, payload).subscribe({
-      next: (res) => {
-        const nuevaNotif: NotificacionSistema = {
-          id: fromUuid(res.id),
-          usuarioId: fromUuid(res.usuarioId),
-          tipo: res.tipo,
-          referenciaId: fromUuid(res.referenciaId),
-          mensaje: res.mensaje,
-          fechaEnvio: res.fechaEnvio ? res.fechaEnvio.slice(0, 10) : hoyIso()
-        };
-        this._notificaciones.update((lista) => [nuevaNotif, ...lista]);
-      },
-      error: (err) => console.error('Error al registrar notificación en el backend:', err)
-    });
+  /** Cancela una reserva activa y libera el ejemplar apartado. */
+  cancelarReserva(id: string): Observable<ResultadoReserva> {
+    const reservaActual = this._reservas().find((r) => r.id === id);
+    return this.http.put<any>(`${this.API_URL}/reservas/${id}/cancelar`, {}).pipe(
+      map((data) => {
+        const reserva = this.mapReserva(data);
+        this._reservas.update((lista) => lista.map((r) => (r.id === id ? reserva : r)));
+        if (reservaActual) {
+          this.ajustarDisponibilidad(reservaActual.libroId, 1);
+        }
+        return { ok: true, mensaje: 'Reserva cancelada.', reserva };
+      }),
+      catchError((err) =>
+        of({ ok: false, mensaje: err.error?.error ?? 'No se pudo cancelar la reserva.' }),
+      ),
+    );
+  }
+
+  private ajustarDisponibilidad(libroId: string, delta: number): void {
+    this._libros.update((lista) =>
+      lista.map((l) =>
+        l.id === libroId ? { ...l, ejemplaresDisponibles: l.ejemplaresDisponibles + delta } : l,
+      ),
+    );
   }
 
   /** DE03 — Historial de devoluciones con filtro opcional por usuario, libro o fecha. */

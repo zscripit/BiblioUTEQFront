@@ -47,21 +47,19 @@ export class RegistrarPrestamo {
       return;
     }
 
-    const resultado = this.prestamosService.registrarPrestamo(
-      this.usuarioId(),
-      this.libroId(),
-      this.diasPlazo(),
-    );
+    this.prestamosService
+      .registrarPrestamo(this.usuarioId(), this.libroId(), this.diasPlazo())
+      .subscribe((resultado) => {
+        this.exito.set(resultado.ok);
+        this.mensaje.set(resultado.mensaje);
 
-    this.exito.set(resultado.ok);
-    this.mensaje.set(resultado.mensaje);
-
-    if (resultado.ok) {
-      this.usuarioId.set('');
-      this.libroId.set('');
-      this.buscarUsuario.set('');
-      this.buscarLibro.set('');
-      this.diasPlazo.set(7);
-    }
+        if (resultado.ok) {
+          this.usuarioId.set('');
+          this.libroId.set('');
+          this.buscarUsuario.set('');
+          this.buscarLibro.set('');
+          this.diasPlazo.set(7);
+        }
+      });
   }
 }

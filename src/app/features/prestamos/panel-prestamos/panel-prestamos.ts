@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Auth } from '../../../services/auth';
 import { PrestamosSidebar } from '../prestamos-sidebar/prestamos-sidebar';
+import { PrestamosService } from '../prestamos.service';
 
 @Component({
   selector: 'app-panel-prestamos',
@@ -12,6 +13,7 @@ import { PrestamosSidebar } from '../prestamos-sidebar/prestamos-sidebar';
 export class PanelPrestamos {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly prestamosService = inject(PrestamosService);
 
   protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
@@ -29,7 +31,12 @@ export class PanelPrestamos {
     // Solo front-end: si no hay sesión activa, regresamos al login.
     if (!this.auth.estaAutenticado()) {
       this.router.navigateByUrl('/login');
+      return;
     }
+
+    // Usuarios y préstamos son de administración; se cargan una sola vez para todo el panel.
+    this.prestamosService.cargarUsuarios();
+    this.prestamosService.cargarPrestamos();
   }
 
   alternarMenu(): void {

@@ -1,4 +1,4 @@
-.mis-reservas {
+.mis-prestamos {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -8,12 +8,19 @@
   box-shadow: var(--sombra-sm);
 }
 
-.mis-reservas__encabezado h2 {
+.mis-prestamos__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mis-prestamos__encabezado h2 {
   color: var(--tinta-900);
   font-size: 1.4rem;
 }
 
-.mis-reservas__eyebrow {
+.mis-prestamos__eyebrow {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -22,13 +29,13 @@
   margin-bottom: 0.25rem;
 }
 
-.mis-reservas__filtros {
+.mis-prestamos__filtros {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
 }
 
-.mis-reservas__filtro {
+.mis-prestamos__filtro {
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
   background: var(--azul-50);
@@ -36,17 +43,17 @@
   font-weight: 600;
 }
 
-.mis-reservas__filtro--activo {
+.mis-prestamos__filtro--activo {
   background: linear-gradient(135deg, var(--azul-700), var(--azul-900));
   color: var(--blanco);
 }
 
-.mis-reservas__lista {
+.mis-prestamos__lista {
   display: grid;
   gap: 0.9rem;
 }
 
-.mis-reservas__card {
+.mis-prestamos__card {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -57,58 +64,53 @@
   background: var(--crema);
 }
 
-.mis-reservas__info h3 {
+.mis-prestamos__info h3 {
   color: var(--tinta-900);
   margin-bottom: 0.35rem;
 }
 
-.mis-reservas__info p {
+.mis-prestamos__info p {
   color: var(--tinta-700);
   margin: 0.15rem 0;
+  font-size: 0.9rem;
 }
 
-.mis-reservas__estado {
+.mis-prestamos__alerta {
+  color: var(--rojo-600);
+  font-weight: 700;
+}
+
+.mis-prestamos__estado {
+  flex-shrink: 0;
   padding: 0.45rem 0.75rem;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 700;
 }
 
-.mis-reservas__estado--activa {
+.mis-prestamos__estado--activo {
   background: var(--celeste-100);
   color: var(--celeste-600);
 }
 
-.mis-reservas__estado--convertida {
-  background: var(--azul-100);
-  color: var(--azul-700);
-}
-
-.mis-reservas__estado--cancelada {
+.mis-prestamos__estado--vencido {
   background: var(--rojo-50);
   color: var(--rojo-600);
 }
 
-.mis-reservas__estado--expirada {
-  background: var(--crema);
-  color: var(--tinta-400);
+.mis-prestamos__estado--devuelto {
+  background: var(--azul-100);
+  color: var(--azul-700);
 }
 
-.mis-reservas__acciones {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-.mis-reservas__vacio {
+.mis-prestamos__vacio {
   color: var(--tinta-400);
   font-style: italic;
   padding-block: 1rem;
 }
 
 @media (max-width: 700px) {
-  .mis-reservas__card {
+  .mis-prestamos__card {
     flex-direction: column;
     align-items: flex-start;
   }

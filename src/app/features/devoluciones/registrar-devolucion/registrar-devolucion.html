@@ -30,7 +30,7 @@
       <div>
         <strong>{{ prestamo.libro.titulo }}</strong>
         <small>{{ prestamo.libro.autor }}</small>
-        <small>Prestado a: {{ prestamo.usuario.nombre }} ({{ prestamo.usuario.matricula }})</small>
+        <small>Prestado a: {{ prestamo.usuario.nombre }} ({{ prestamo.usuario.correo }})</small>
         <small>Vence: {{ prestamo.fechaVencimiento }}</small>
       </div>
       <button type="button" class="boton boton--contorno" (click)="cambiarSeleccion()">
@@ -57,7 +57,7 @@
         <input
           id="buscar-prestamo"
           type="text"
-          placeholder="Buscar por usuario, matrícula, título o autor..."
+          placeholder="Buscar por usuario, correo, título o autor..."
           [ngModel]="buscarPrestamo()"
           (ngModelChange)="buscarPrestamo.set($event)"
           autocomplete="off"
@@ -71,7 +71,7 @@
           <button type="button" (click)="seleccionarPrestamo(prestamo.id)">
             <div>
               <strong>{{ prestamo.libro.titulo }}</strong>
-              <small>{{ prestamo.usuario.nombre }} · {{ prestamo.usuario.matricula }}</small>
+              <small>{{ prestamo.usuario.nombre }} · {{ prestamo.usuario.correo }}</small>
             </div>
             <small>Vence: {{ prestamo.fechaVencimiento }}</small>
           </button>

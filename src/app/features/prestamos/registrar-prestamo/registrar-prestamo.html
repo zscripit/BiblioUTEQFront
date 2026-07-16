@@ -49,7 +49,7 @@
         <div class="tarjeta-seleccion">
           <div>
             <strong>{{ usuario.nombre }}</strong>
-            <small>{{ usuario.matricula }} · {{ usuario.correo }}</small>
+            <small>{{ usuario.correo }}</small>
           </div>
           <span
             class="etiqueta"
@@ -65,7 +65,7 @@
               <button type="button" (click)="seleccionarUsuario(usuario.id)">
                 <div>
                   <strong>{{ usuario.nombre }}</strong>
-                  <small>{{ usuario.matricula }} · {{ usuario.correo }}</small>
+                  <small>{{ usuario.correo }}</small>
                 </div>
                 <div class="lista-seleccionable__meta">
                   <span

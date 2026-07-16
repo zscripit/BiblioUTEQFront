@@ -46,17 +46,17 @@ export class RegistrarDevolucion {
       return;
     }
 
-    const resultado = this.prestamosService.registrarDevolucion(this.prestamoId());
+    this.prestamosService.registrarDevolucion(this.prestamoId()).subscribe((resultado) => {
+      this.exito.set(resultado.ok);
+      this.mensaje.set(resultado.mensaje);
+      this.tardia.set(resultado.tardia);
+      this.diasRetraso.set(resultado.diasRetraso);
+      this.montoMulta.set(resultado.montoMulta);
 
-    this.exito.set(resultado.ok);
-    this.mensaje.set(resultado.mensaje);
-    this.tardia.set(resultado.tardia);
-    this.diasRetraso.set(resultado.diasRetraso);
-    this.montoMulta.set(resultado.montoMulta);
-
-    if (resultado.ok) {
-      this.prestamoId.set('');
-      this.buscarPrestamo.set('');
-    }
+      if (resultado.ok) {
+        this.prestamoId.set('');
+        this.buscarPrestamo.set('');
+      }
+    });
   }
 }

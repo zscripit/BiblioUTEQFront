@@ -40,12 +40,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/libros/libros').then((m) => m.LibrosAdmin),
         title: 'Biblioteca UTEQ | Gestión de libros',
       },
-      {
-        path: 'mis-reservas',
-        canActivate: [authGuard],
-        loadComponent: () => import('./features/reservas/mis-reservas/mis-reservas').then((m) => m.MisReservas),
-        title: 'Biblioteca UTEQ | Mis reservas',
-      },
     ],
   },
   {
@@ -74,6 +68,18 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/catalogo/catalogo').then((m) => m.Catalogo),
     title: 'Biblioteca UTEQ | Catálogo',
+  },
+  {
+    path: 'mis-reservas',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reservas/mis-reservas/mis-reservas').then((m) => m.MisReservas),
+    title: 'Biblioteca UTEQ | Mis reservas',
+  },
+  {
+    path: 'mis-prestamos',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/prestamos/mis-prestamos/mis-prestamos').then((m) => m.MisPrestamos),
+    title: 'Biblioteca UTEQ | Mis préstamos',
   },
   {
     // Panel del bibliotecario (EPIC05 préstamos + EPIC06 devoluciones)

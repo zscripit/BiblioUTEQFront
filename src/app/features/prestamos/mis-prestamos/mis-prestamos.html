@@ -1,0 +1,52 @@
+<div class="panel">
+  <app-panel-header [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
+
+  <app-sidebar [abierto]="menuAbierto()" (cerrar)="menuAbierto.set(false)" />
+
+  <main class="contenedor panel__contenido">
+    <section class="mis-prestamos">
+      <header class="mis-prestamos__encabezado">
+        <div>
+          <p class="mis-prestamos__eyebrow">Usuario</p>
+          <h2>Mis préstamos</h2>
+        </div>
+        <span class="etiqueta">{{ activosCount() }} activo(s)</span>
+      </header>
+
+      <div class="mis-prestamos__filtros" role="tablist" aria-label="Filtrar préstamos">
+        <button type="button" class="mis-prestamos__filtro" [class.mis-prestamos__filtro--activo]="filtro() === 'TODOS'" (click)="cambiarFiltro('TODOS')">Todos</button>
+        <button type="button" class="mis-prestamos__filtro" [class.mis-prestamos__filtro--activo]="filtro() === 'ACTIVO'" (click)="cambiarFiltro('ACTIVO')">En curso</button>
+        <button type="button" class="mis-prestamos__filtro" [class.mis-prestamos__filtro--activo]="filtro() === 'VENCIDO'" (click)="cambiarFiltro('VENCIDO')">Vencidos</button>
+        <button type="button" class="mis-prestamos__filtro" [class.mis-prestamos__filtro--activo]="filtro() === 'DEVUELTO'" (click)="cambiarFiltro('DEVUELTO')">Devueltos</button>
+      </div>
+
+      <div class="mis-prestamos__lista">
+        @for (prestamo of misPrestamos(); track prestamo.id) {
+          <article class="mis-prestamos__card">
+            <div class="mis-prestamos__info">
+              <h3>{{ prestamo.libro?.titulo ?? 'Libro no disponible' }}</h3>
+              <p>{{ prestamo.libro?.autor }}</p>
+              <p><strong>Prestado:</strong> {{ prestamo.fechaPrestamo }} · <strong>Vence:</strong> {{ prestamo.fechaVencimiento }}</p>
+              @if (prestamo.estado === 'DEVUELTO' && prestamo.fechaDevolucion) {
+                <p><strong>Devuelto:</strong> {{ prestamo.fechaDevolucion }}</p>
+              }
+              @if (prestamo.estado === 'VENCIDO') {
+                <p class="mis-prestamos__alerta">{{ prestamo.diasRetraso }} día(s) de retraso</p>
+              }
+            </div>
+            <span class="mis-prestamos__estado"
+              [class.mis-prestamos__estado--activo]="prestamo.estado === 'ACTIVO'"
+              [class.mis-prestamos__estado--vencido]="prestamo.estado === 'VENCIDO'"
+              [class.mis-prestamos__estado--devuelto]="prestamo.estado === 'DEVUELTO'">
+              {{ prestamo.estado }}
+            </span>
+          </article>
+        } @empty {
+          <p class="mis-prestamos__vacio">No tienes préstamos con este filtro.</p>
+        }
+      </div>
+    </section>
+  </main>
+
+  <app-panel-footer />
+</div>

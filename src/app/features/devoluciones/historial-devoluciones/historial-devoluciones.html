@@ -14,7 +14,7 @@
       <select id="filtro-usuario" [ngModel]="usuarioId()" (ngModelChange)="usuarioId.set($event)">
         <option value="">Todos los usuarios</option>
         @for (usuario of usuarios(); track usuario.id) {
-          <option [value]="usuario.id">{{ usuario.nombre }} · {{ usuario.matricula }}</option>
+          <option [value]="usuario.id">{{ usuario.nombre }} · {{ usuario.correo }}</option>
         }
       </select>
     </div>
@@ -61,7 +61,7 @@
           <tr>
             <td>
               <strong>{{ devolucion.usuario.nombre }}</strong>
-              <small>{{ devolucion.usuario.matricula }}</small>
+              <small>{{ devolucion.usuario.correo }}</small>
             </td>
             <td>
               <strong>{{ devolucion.libro.titulo }}</strong>
