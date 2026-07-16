@@ -2,8 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Auth } from '../../services/auth';
+import { CatalogoService, Libro } from '../../services/catalogo.service';
 import { Sidebar } from '../../components/layouts/sidebar/sidebar';
-import { PrestamosService } from '../prestamos/prestamos.service';
 
 @Component({
   selector: 'app-catalogo',
@@ -14,7 +14,7 @@ import { PrestamosService } from '../prestamos/prestamos.service';
 export class Catalogo {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
-  private readonly prestamosService = inject(PrestamosService);
+  private readonly catalogoService = inject(CatalogoService);
 
   protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
@@ -23,11 +23,30 @@ export class Catalogo {
   protected readonly categoriaSeleccionada = signal('');
   protected readonly imagenesConError = signal(new Set<string>());
 
-  protected readonly categorias = this.prestamosService.categorias;
+  private readonly _catalogo = signal<Libro[]>([]);
 
-  protected readonly libros = computed(() =>
-    this.prestamosService.buscarCatalogo(this.busqueda(), this.categoriaSeleccionada() || undefined),
+  protected readonly categorias = computed(() =>
+    [...new Set(this._catalogo().map((libro) => libro.categoria))].filter(Boolean).sort(),
   );
+
+  protected readonly libros = computed(() => {
+    const valor = this.busqueda().trim().toLowerCase();
+    const categoria = this.categoriaSeleccionada();
+
+    return this._catalogo()
+      .filter((libro) => !categoria || libro.categoria === categoria)
+      .filter(
+        (libro) =>
+          !valor ||
+          libro.titulo.toLowerCase().includes(valor) ||
+          libro.autor.toLowerCase().includes(valor),
+      )
+      .map((libro) => ({
+        ...libro,
+        portada: libro.tienePortada ? this.catalogoService.portadaUrl(libro.id) : '',
+        ejemplaresDisponibles: libro.stock - libro.stockReservado,
+      }));
+  });
 
   protected readonly iniciales = computed(() => {
     const nombre = this.usuario()?.nombre ?? 'Invitado';
@@ -42,7 +61,13 @@ export class Catalogo {
     // Solo front-end: si no hay sesión activa, regresamos al login.
     if (!this.auth.estaAutenticado()) {
       this.router.navigateByUrl('/login');
+      return;
     }
+
+    this.catalogoService.listar().subscribe({
+      next: (libros) => this._catalogo.set(libros),
+      error: (err) => console.error('Error al cargar el catálogo:', err),
+    });
   }
 
   alternarMenu(): void {

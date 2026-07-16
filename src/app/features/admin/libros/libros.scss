@@ -119,10 +119,30 @@
   background: var(--blanco);
 }
 
-.admin-libros__grupo--check label {
-  display: flex;
+.admin-libros__error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--rojo-50);
+  color: var(--rojo-600);
+  font-weight: 600;
+}
+
+.admin-libros__miniatura {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  background: var(--azul-50);
+  color: var(--azul-700);
+}
+
+.admin-libros__miniatura--previa {
+  width: 5.5rem;
+  height: 5.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .admin-libros__botones {

@@ -80,7 +80,7 @@
       @for (libro of libros(); track libro.id) {
         <article class="libro-card">
           <div class="libro-card__portada">
-            @if (imagenesConError().has(libro.id)) {
+            @if (!libro.tienePortada || imagenesConError().has(libro.id)) {
               <div class="libro-card__marcador" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                   stroke-linecap="round" stroke-linejoin="round">
@@ -90,7 +90,7 @@
               </div>
             } @else {
               <img
-                [src]="'/portadas/' + libro.portada"
+                [src]="libro.portada"
                 [alt]="'Portada de ' + libro.titulo"
                 loading="lazy"
                 (error)="marcarImagenFallida(libro.id)"

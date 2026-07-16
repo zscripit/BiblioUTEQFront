@@ -1,20 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
-interface Libro {
-  id: number;
-  titulo: string;
-  autor: string;
-  categoria: string;
-  disponible: boolean;
-}
-
-interface LibroForm {
-  titulo: string;
-  autor: string;
-  categoria: string;
-  disponible: boolean;
-}
+import { CatalogoService, Libro, LibroForm } from '../../../services/catalogo.service';
 
 @Component({
   selector: 'app-libros-admin',
@@ -23,28 +9,59 @@ interface LibroForm {
   styleUrl: './libros.scss',
 })
 export class LibrosAdmin {
-  protected readonly libros = signal<Libro[]>([
-    { id: 1, titulo: 'Clean Code', autor: 'Robert C. Martin', categoria: 'Software', disponible: true },
-    { id: 2, titulo: 'Cien años de soledad', autor: 'Gabriel García Márquez', categoria: 'Literatura', disponible: false },
-    { id: 3, titulo: 'Sapiens', autor: 'Yuval Noah Harari', categoria: 'Historia', disponible: true },
-  ]);
+  private readonly catalogoService = inject(CatalogoService);
+
+  protected readonly libros = signal<Libro[]>([]);
+  protected readonly cargando = signal(false);
+  protected readonly error = signal<string | null>(null);
 
   protected readonly modo = signal<'lista' | 'form'>('lista');
   protected readonly libroSeleccionado = signal<Libro | null>(null);
 
   protected formulario: LibroForm = {
     titulo: '',
+    isbn: '',
     autor: '',
     categoria: '',
-    disponible: true,
+    stock: 1,
   };
+
+  private portadaSeleccionada: File | null = null;
+
+  constructor() {
+    this.cargarLibros();
+  }
+
+  protected disponible(libro: Libro): boolean {
+    return libro.activo && libro.stock - libro.stockReservado > 0;
+  }
+
+  protected portadaUrl(libro: Libro): string | null {
+    return libro.tienePortada ? this.catalogoService.portadaUrl(libro.id) : null;
+  }
+
+  protected onPortadaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+
+    if (archivo && archivo.type !== 'image/png') {
+      this.error.set('La portada debe ser un archivo PNG.');
+      input.value = '';
+      this.portadaSeleccionada = null;
+      return;
+    }
+
+    this.portadaSeleccionada = archivo;
+  }
 
   protected abrirFormulario(nuevo: boolean = false): void {
     if (nuevo) {
       this.libroSeleccionado.set(null);
-      this.formulario = { titulo: '', autor: '', categoria: '', disponible: true };
+      this.formulario = { titulo: '', isbn: '', autor: '', categoria: '', stock: 1 };
     }
 
+    this.portadaSeleccionada = null;
+    this.error.set(null);
     this.modo.set('form');
   }
 
@@ -52,48 +69,79 @@ export class LibrosAdmin {
     this.libroSeleccionado.set(libro);
     this.formulario = {
       titulo: libro.titulo,
+      isbn: libro.isbn,
       autor: libro.autor,
       categoria: libro.categoria,
-      disponible: libro.disponible,
+      stock: libro.stock,
     };
+    this.portadaSeleccionada = null;
+    this.error.set(null);
     this.modo.set('form');
   }
 
   protected guardarLibro(): void {
-    const { titulo, autor, categoria, disponible } = this.formulario;
+    const { titulo, isbn, autor, categoria, stock } = this.formulario;
 
-    if (!titulo.trim() || !autor.trim() || !categoria.trim()) {
+    if (!titulo.trim() || !isbn.trim() || !autor.trim() || !categoria.trim()) {
       return;
     }
 
     const actual = this.libroSeleccionado();
+    const payload: LibroForm = { titulo, isbn, autor, categoria, stock };
 
-    if (actual) {
-      this.libros.update((items) =>
-        items.map((libro) =>
-          libro.id === actual.id ? { ...libro, titulo, autor, categoria, disponible } : libro,
-        ),
-      );
-    } else {
-      const nuevoLibro: Libro = {
-        id: Date.now(),
-        titulo,
-        autor,
-        categoria,
-        disponible,
-      };
-      this.libros.update((items) => [nuevoLibro, ...items]);
-    }
+    const peticion = actual
+      ? this.catalogoService.actualizar(actual.id, payload)
+      : this.catalogoService.crear(payload);
 
-    this.volverALista();
+    peticion.subscribe({
+      next: (libro) => this.subirPortadaSiHay(libro.id),
+      error: (err) => {
+        this.error.set(err.error?.error ?? 'No se pudo guardar el libro.');
+      },
+    });
   }
 
-  protected eliminarLibro(id: number): void {
-    this.libros.update((items) => items.filter((libro) => libro.id !== id));
+  private subirPortadaSiHay(libroId: string): void {
+    if (!this.portadaSeleccionada) {
+      this.cargarLibros();
+      this.volverALista();
+      return;
+    }
+
+    this.catalogoService.subirPortada(libroId, this.portadaSeleccionada).subscribe({
+      next: () => {
+        this.cargarLibros();
+        this.volverALista();
+      },
+      error: (err) => {
+        this.error.set(err.error?.error ?? 'El libro se guardó, pero no se pudo subir la portada.');
+      },
+    });
+  }
+
+  protected eliminarLibro(id: string): void {
+    this.catalogoService.eliminar(id).subscribe({
+      next: () => this.libros.update((items) => items.filter((libro) => libro.id !== id)),
+      error: () => this.error.set('No se pudo eliminar el libro.'),
+    });
   }
 
   protected volverALista(): void {
     this.libroSeleccionado.set(null);
     this.modo.set('lista');
+  }
+
+  private cargarLibros(): void {
+    this.cargando.set(true);
+    this.catalogoService.listar().subscribe({
+      next: (libros) => {
+        this.libros.set(libros);
+        this.cargando.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudo cargar el catálogo.');
+        this.cargando.set(false);
+      },
+    });
   }
 }

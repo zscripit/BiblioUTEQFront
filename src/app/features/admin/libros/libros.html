@@ -11,11 +11,16 @@
     }
   </header>
 
+  @if (error()) {
+    <p class="admin-libros__error">{{ error() }}</p>
+  }
+
   @if (modo() === 'lista') {
     <div class="admin-libros__tabla-wrap">
       <table class="admin-libros__tabla">
         <thead>
           <tr>
+            <th>Portada</th>
             <th>Título</th>
             <th>Autor</th>
             <th>Categoría</th>
@@ -26,12 +31,19 @@
         <tbody>
           @for (libro of libros(); track libro.id) {
             <tr>
+              <td>
+                @if (portadaUrl(libro); as url) {
+                  <img class="admin-libros__miniatura" [src]="url" [alt]="'Portada de ' + libro.titulo" />
+                } @else {
+                  <span class="admin-libros__miniatura admin-libros__miniatura--vacia">—</span>
+                }
+              </td>
               <td>{{ libro.titulo }}</td>
               <td>{{ libro.autor }}</td>
               <td>{{ libro.categoria }}</td>
               <td>
-                <span class="admin-libros__estado" [class.admin-libros__estado--disponible]="libro.disponible">
-                  {{ libro.disponible ? 'Disponible' : 'Prestado' }}
+                <span class="admin-libros__estado" [class.admin-libros__estado--disponible]="disponible(libro)">
+                  {{ disponible(libro) ? 'Disponible (' + (libro.stock - libro.stockReservado) + ')' : 'Sin ejemplares' }}
                 </span>
               </td>
               <td>
@@ -63,11 +75,22 @@
         <label for="categoria">Categoría</label>
         <input id="categoria" name="categoria" [(ngModel)]="formulario.categoria" required />
       </div>
-      <div class="admin-libros__grupo admin-libros__grupo--check">
-        <label for="disponible">
-          <input id="disponible" name="disponible" type="checkbox" [(ngModel)]="formulario.disponible" />
-          Disponible
-        </label>
+      <div class="admin-libros__grupo">
+        <label for="isbn">ISBN</label>
+        <input id="isbn" name="isbn" [(ngModel)]="formulario.isbn" required />
+      </div>
+      <div class="admin-libros__grupo">
+        <label for="stock">Ejemplares</label>
+        <input id="stock" name="stock" type="number" min="0" [(ngModel)]="formulario.stock" required />
+      </div>
+      <div class="admin-libros__grupo">
+        <label for="portada">Portada (PNG)</label>
+        @if (libroSeleccionado(); as actual) {
+          @if (portadaUrl(actual); as url) {
+            <img class="admin-libros__miniatura admin-libros__miniatura--previa" [src]="url" alt="Portada actual" />
+          }
+        }
+        <input id="portada" name="portada" type="file" accept="image/png" (change)="onPortadaSeleccionada($event)" />
       </div>
 
       <div class="admin-libros__botones">
