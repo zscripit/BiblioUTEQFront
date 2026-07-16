@@ -11,7 +11,7 @@
     <div class="tarjeta-seleccion">
       <div>
         <strong>{{ usuario.nombre }}</strong>
-        <small>{{ usuario.matricula }} · {{ usuario.correo }}</small>
+        <small>{{ usuario.correo }}</small>
       </div>
       <button type="button" class="boton boton--contorno" (click)="limpiarSeleccion()">
         Cambiar usuario
@@ -61,7 +61,7 @@
           <button type="button" (click)="seleccionarUsuario(usuario.id)">
             <div>
               <strong>{{ usuario.nombre }}</strong>
-              <small>{{ usuario.matricula }} · {{ usuario.correo }}</small>
+              <small>{{ usuario.correo }}</small>
             </div>
             <span class="etiqueta" [class.etiqueta--celeste]="usuario.estado === 'ACTIVO'">
               {{ usuario.estado }}

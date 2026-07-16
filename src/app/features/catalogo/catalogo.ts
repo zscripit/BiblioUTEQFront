@@ -4,10 +4,12 @@ import { Router } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { CatalogoService, Libro } from '../../services/catalogo.service';
 import { Sidebar } from '../../components/layouts/sidebar/sidebar';
+import { PanelHeader } from '../../components/layouts/panel-header/panel-header';
+import { PanelFooter } from '../../components/layouts/panel-footer/panel-footer';
 
 @Component({
   selector: 'app-catalogo',
-  imports: [FormsModule, Sidebar],
+  imports: [FormsModule, Sidebar, PanelHeader, PanelFooter],
   templateUrl: './catalogo.html',
   styleUrl: './catalogo.scss',
 })
@@ -16,7 +18,6 @@ export class Catalogo {
   private readonly router = inject(Router);
   private readonly catalogoService = inject(CatalogoService);
 
-  protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
 
   protected readonly busqueda = signal('');
@@ -46,15 +47,6 @@ export class Catalogo {
         portada: libro.tienePortada ? this.catalogoService.portadaUrl(libro.id) : '',
         ejemplaresDisponibles: libro.stock - libro.stockReservado,
       }));
-  });
-
-  protected readonly iniciales = computed(() => {
-    const nombre = this.usuario()?.nombre ?? 'Invitado';
-    return nombre
-      .split(' ')
-      .slice(0, 2)
-      .map((parte) => parte.charAt(0).toUpperCase())
-      .join('');
   });
 
   constructor() {

@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 
-export interface Usuario { nombre: string; correo: string; roles: string[]; }
+export interface Usuario { id: string; nombre: string; correo: string; roles: string[]; }
 interface TokenResponse { access_token: string; refresh_token?: string; id_token?: string; expires_in: number; }
 
 @Injectable({ providedIn: 'root' })
@@ -57,7 +57,8 @@ export class Auth {
     const roles = Array.isArray(accessClaims['roles'])
       ? accessClaims['roles'].map(String)
       : [];
-    const usuario = { nombre: String(claims['name'] ?? this.nombreDesdeCorreo(correo)), correo, roles };
+    const id = String(accessClaims['user_id'] ?? claims['user_id'] ?? '');
+    const usuario = { id, nombre: String(claims['name'] ?? this.nombreDesdeCorreo(correo)), correo, roles };
     sessionStorage.setItem('oauth_usuario', JSON.stringify(usuario));
     this._usuario.set(usuario);
   }

@@ -32,7 +32,7 @@ export class SancionesAdmin {
       
       return (
         pDetalle.usuario.nombre.toLowerCase().includes(termino) ||
-        pDetalle.usuario.matricula.toLowerCase().includes(termino) ||
+        pDetalle.usuario.correo.toLowerCase().includes(termino) ||
         pDetalle.libro.titulo.toLowerCase().includes(termino)
       );
     }).map((s) => {

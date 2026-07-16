@@ -1,0 +1,79 @@
+<header class="panel__barra" [class.panel__barra--flotante]="navConScroll()">
+  <div class="contenedor panel__barra-interior">
+    <div class="panel__izquierda">
+      <button
+        type="button"
+        class="hamburguesa"
+        (click)="onHamburguesa()"
+        [class.hamburguesa--activa]="menuAbierto()"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-label="Abrir o cerrar el menú"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <a routerLink="/home" class="panel__marca" aria-label="Biblioteca UTEQ — Mi Biblioteca">
+        <span aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <path d="M9 7h6M9 11h4" />
+          </svg>
+        </span>
+        <strong>Biblioteca UTEQ</strong>
+      </a>
+    </div>
+
+    <nav class="panel__nav" aria-label="Navegación principal">
+      <ul class="panel__nav-lista">
+        @for (enlace of enlacesNav; track enlace.etiqueta) {
+          <li>
+            @if (enlace.ruta) {
+              <a
+                class="panel__nav-enlace"
+                [routerLink]="enlace.ruta"
+                routerLinkActive="panel__nav-enlace--activo"
+                [routerLinkActiveOptions]="{ exact: !!enlace.exacto }"
+              >{{ enlace.etiqueta }}</a>
+            } @else {
+              <a
+                class="panel__nav-enlace"
+                href="#"
+                (click)="irASeccion(enlace.fragmento!, $event)"
+              >{{ enlace.etiqueta }}</a>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="panel__chip" (click)="alternarMenuUsuario($event)">
+      <div class="panel__datos">
+        <strong>{{ usuario()?.nombre ?? 'Invitado' }}</strong>
+        <small>{{ usuario()?.correo ?? '' }}</small>
+      </div>
+      <span class="panel__avatar" aria-hidden="true">{{ iniciales() }}</span>
+
+      @if (menuUsuarioAbierto()) {
+        <div class="panel__dropdown" role="menu">
+          <button type="button" class="panel__dropdown-item" (click)="menuUsuarioAbierto.set(false)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            Perfil
+          </button>
+          <button type="button" class="panel__dropdown-item" (click)="menuUsuarioAbierto.set(false)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            Configuración
+          </button>
+          <hr class="panel__dropdown-separador" />
+          <button type="button" class="panel__dropdown-item panel__dropdown-item--peligro" (click)="cerrarSesion()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
+            Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>

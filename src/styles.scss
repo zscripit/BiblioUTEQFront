@@ -125,6 +125,21 @@ h1, h2, h3, h4 {
   margin-inline: auto;
 }
 
+/* ---------- Layout del área autenticada (Home, Catálogo, Mis reservas...) ---------- */
+.panel {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--crema);
+}
+
+.panel__contenido {
+  flex: 1;
+  width: min(1160px, 100% - 2.5rem);
+  margin-inline: auto;
+  padding-block: 1.75rem 3rem;
+}
+
 /* ---------- Secciones ---------- */
 .seccion {
   padding-block: clamp(3.5rem, 8vw, 6rem);

@@ -1,41 +1,25 @@
-import { Component, ElementRef, HostListener, afterNextRender, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { Sidebar } from '../../components/layouts/sidebar/sidebar';
+import { PanelHeader } from '../../components/layouts/panel-header/panel-header';
+import { PanelFooter } from '../../components/layouts/panel-footer/panel-footer';
 import { PrestamosService } from '../prestamos/prestamos.service';
-
-interface EnlaceNav {
-  etiqueta: string;
-  ruta?: string;
-  fragmento?: string;
-  exacto?: boolean;
-}
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, RouterLinkActive, Sidebar],
+  imports: [RouterLink, Sidebar, PanelHeader, PanelFooter],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly prestamosService = inject(PrestamosService);
-  private readonly elementoAnfitrion = inject(ElementRef<HTMLElement>);
 
   protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
-  protected readonly menuUsuarioAbierto = signal(false);
-  protected readonly navConScroll = signal(false);
-  protected readonly anioActual = new Date().getFullYear();
-
-  protected readonly enlacesNav: EnlaceNav[] = [
-    { etiqueta: 'Inicio', ruta: '/home', exacto: true },
-    { etiqueta: 'Catálogo', ruta: '/catalogo' },
-    { etiqueta: 'Mis Préstamos', fragmento: 'mis-prestamos' },
-    { etiqueta: 'Reservas', ruta: '/mis-reservas' },
-    { etiqueta: 'Historial', fragmento: 'avisos' },
-  ];
 
   constructor() {
     // Solo front-end: si no hay sesión activa, regresamos al login.
@@ -43,50 +27,26 @@ export class Home {
       this.router.navigateByUrl('/login');
     }
 
-    afterNextRender(() => {
-      const actualizarScroll = () => this.navConScroll.set(window.scrollY > 8);
-      actualizarScroll();
-      window.addEventListener('scroll', actualizarScroll, { passive: true });
+    const idUsuario = this.usuario()?.id;
+    if (idUsuario) {
+      this.prestamosService.cargarNotificacionesDeUsuario(idUsuario);
+      this.prestamosService.cargarPrestamosDeUsuario(idUsuario);
+    }
+
+    // El header/footer (en esta u otras páginas) navegan aquí con un fragmento
+    // ("mis-prestamos", "avisos") para llevar al usuario a la sección correspondiente.
+    this.route.fragment.subscribe((fragmento) => {
+      if (!fragmento) return;
+      setTimeout(() => {
+        document.getElementById(fragmento)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
   }
 
-  @HostListener('document:click', ['$event'])
-  protected alClicFuera(evento: MouseEvent): void {
-    if (!this.menuUsuarioAbierto()) return;
-    if (!this.elementoAnfitrion.nativeElement.querySelector('.panel__chip')?.contains(evento.target as Node)) {
-      this.menuUsuarioAbierto.set(false);
-    }
-  }
-
-  protected alternarMenuUsuario(evento: MouseEvent): void {
-    evento.stopPropagation();
-    this.menuUsuarioAbierto.update((abierto) => !abierto);
-  }
-
-  protected cerrarSesion(): void {
-    this.menuUsuarioAbierto.set(false);
-    this.auth.cerrarSesion();
-  }
-
-  protected readonly usuarioBiblioteca = computed(() => {
-    const email = this.usuario()?.correo;
-    if (!email) return null;
-    return this.prestamosService.usuarios().find((u) => u.correo === email) ?? null;
-  });
-
   protected readonly notificacionesUsuario = computed(() => {
-    const u = this.usuarioBiblioteca();
-    if (!u) return [];
-    return this.prestamosService.notificaciones().filter((n) => n.usuarioId === u.id);
-  });
-
-  protected readonly iniciales = computed(() => {
-    const nombre = this.usuario()?.nombre ?? 'Invitado';
-    return nombre
-      .split(' ')
-      .slice(0, 2)
-      .map((parte) => parte.charAt(0).toUpperCase())
-      .join('');
+    const id = this.usuario()?.id;
+    if (!id) return [];
+    return this.prestamosService.notificaciones().filter((n) => n.usuarioId === id);
   });
 
   protected readonly resumen = [
@@ -96,26 +56,21 @@ export class Home {
     { valor: '12', texto: 'Libros leídos este año', icono: 'estrella' },
   ] as const;
 
-  protected readonly prestamos = [
-    {
-      titulo: 'Frankenstein',
-      autor: 'Mary Shelley',
-      vence: '18 de julio de 2026',
-      estado: 'En curso',
-    },
-    {
-      titulo: 'El Resplandor',
-      autor: 'Stephen King',
-      vence: '21 de julio de 2026',
-      estado: 'En curso',
-    },
-    {
-      titulo: 'Cumbres Borrascosas',
-      autor: 'Emily Brontë',
-      vence: '12 de julio de 2026',
-      estado: 'Por vencer',
-    },
-  ];
+  protected readonly misPrestamos = computed(() => {
+    const id = this.usuario()?.id;
+    if (!id) return [];
+    return this.prestamosService
+      .prestamos()
+      .filter((p) => p.usuarioId === id && p.estado !== 'DEVUELTO')
+      .map((p) => ({
+        titulo: this.prestamosService.libros().find((l) => l.id === p.libroId)?.titulo ?? 'Libro no disponible',
+        autor: this.prestamosService.libros().find((l) => l.id === p.libroId)?.autor ?? '',
+        vence: p.fechaVencimiento,
+        estado: p.estado === 'VENCIDO' ? 'Por vencer' : 'En curso',
+      }))
+      .sort((a, b) => a.vence.localeCompare(b.vence))
+      .slice(0, 5);
+  });
 
   protected readonly recomendados = [
     { titulo: 'Coraline', autor: 'Neil Gaiman', categoria: 'Fantasía oscura' },
