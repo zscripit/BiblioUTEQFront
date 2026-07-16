@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { Sidebar } from '../../components/layouts/sidebar/sidebar';
+import { PrestamosService } from '../prestamos/prestamos.service';
 
 @Component({
   selector: 'app-home',
@@ -12,9 +13,22 @@ import { Sidebar } from '../../components/layouts/sidebar/sidebar';
 export class Home {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly prestamosService = inject(PrestamosService);
 
   protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
+
+  protected readonly usuarioBiblioteca = computed(() => {
+    const email = this.usuario()?.correo;
+    if (!email) return null;
+    return this.prestamosService.usuarios().find((u) => u.correo === email) ?? null;
+  });
+
+  protected readonly notificacionesUsuario = computed(() => {
+    const u = this.usuarioBiblioteca();
+    if (!u) return [];
+    return this.prestamosService.notificaciones().filter((n) => n.usuarioId === u.id);
+  });
 
   protected readonly iniciales = computed(() => {
     const nombre = this.usuario()?.nombre ?? 'Invitado';

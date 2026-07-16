@@ -1,0 +1,106 @@
+<section class="bloque aparecer" aria-label="Administración de sanciones">
+  <header class="bloque__cabecera">
+    <h1>Administración de sanciones</h1>
+    <span class="etiqueta">SA01 · SA02 · SA03</span>
+  </header>
+  <p class="bloque__descripcion">
+    Consulta las multas generadas de forma automática por devoluciones tardías y regístralas como pagadas para rehabilitar el acceso de los alumnos a nuevos préstamos.
+  </p>
+
+  <div class="filtros-sanciones">
+    <div class="campo campo-busqueda">
+      <label for="buscar-usuario">Buscar sanción</label>
+      <div class="campo__control">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          id="buscar-usuario"
+          type="text"
+          placeholder="Buscar por alumno, matrícula o libro..."
+          [ngModel]="buscarUsuario()"
+          (ngModelChange)="buscarUsuario.set($event)"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <div class="campo campo-estado">
+      <label for="filtro-estado">Estado de la multa</label>
+      <select
+        id="filtro-estado"
+        [ngModel]="filtroEstado()"
+        (ngModelChange)="filtroEstado.set($event)"
+      >
+        <option value="PENDIENTE">Pendientes de Pago</option>
+        <option value="PAGADA">Pagadas / Resueltas</option>
+        <option value="TODAS">Ver Todas</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tabla-sanciones-contenedor">
+    <table class="tabla-sanciones">
+      <thead>
+        <tr>
+          <th>Alumno</th>
+          <th>Libro Asociado</th>
+          <th>Generada</th>
+          <th>Monto</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sancion of sancionesFiltradas(); track sancion.id) {
+          <tr [class.fila-pendiente]="sancion.estado === 'PENDIENTE'">
+            <td>
+              <div class="tabla-sanciones__user">
+                <strong>{{ sancion.usuario.nombre }}</strong>
+                <small>{{ sancion.usuario.matricula }} · {{ sancion.usuario.correo }}</small>
+              </div>
+            </td>
+            <td>
+              <div class="tabla-sanciones__libro">
+                <strong>{{ sancion.libro.titulo }}</strong>
+                <small>Venció el: {{ sancion.fechaVencimiento }}</small>
+              </div>
+            </td>
+            <td>
+              <span>{{ sancion.fechaGeneracion }}</span>
+            </td>
+            <td>
+              <span class="monto-multa">${{ sancion.monto }}.00</span>
+            </td>
+            <td>
+              <span class="badge-estado" [class.badge-estado--pendiente]="sancion.estado === 'PENDIENTE'" [class.badge-estado--pagada]="sancion.estado === 'PAGADA'">
+                {{ sancion.estado === 'PENDIENTE' ? 'Pendiente' : 'Pagada' }}
+              </span>
+            </td>
+            <td>
+              @if (sancion.estado === 'PENDIENTE') {
+                <button type="button" class="boton-pagar" (click)="pagar(sancion.id)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Registrar Pago
+                </button>
+              } @else {
+                <span class="fecha-pago-txt">Pagada el {{ sancion.fechaPago }}</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="tabla-sanciones__vacio">
+              No se encontraron sanciones que coincidan con los filtros.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

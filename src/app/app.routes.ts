@@ -133,6 +133,14 @@ export const routes: Routes = [
               ).then((m) => m.HistorialDevoluciones),
             title: 'Biblioteca UTEQ | Historial de devoluciones',
           },
+          {
+            path: 'sanciones',
+            loadComponent: () =>
+              import(
+                './features/devoluciones/sanciones/sanciones'
+              ).then((m) => m.SancionesAdmin),
+            title: 'Biblioteca UTEQ | Administrar sanciones',
+          },
         ],
       },
     ],

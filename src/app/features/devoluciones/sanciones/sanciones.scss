@@ -1,0 +1,152 @@
+.filtros-sanciones {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  margin-block: 1.5rem 2rem;
+  align-items: flex-end;
+
+  @media (max-width: 650px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.campo-busqueda {
+  margin-bottom: 0;
+}
+
+.campo-estado {
+  margin-bottom: 0;
+  width: 220px;
+
+  @media (max-width: 650px) {
+    width: 100%;
+  }
+
+  select {
+    height: 48px;
+    font-weight: 500;
+  }
+}
+
+.tabla-sanciones-contenedor {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
+}
+
+.tabla-sanciones {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.95rem;
+
+  th, td {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  th {
+    background: var(--crema);
+    color: var(--tinta-900);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  &__user, &__libro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    strong {
+      color: var(--tinta-900);
+      font-size: 0.95rem;
+    }
+
+    small {
+      color: var(--tinta-600);
+      font-size: 0.8rem;
+    }
+  }
+
+  .monto-multa {
+    font-weight: 700;
+    color: var(--rojo-600);
+    font-size: 1.05rem;
+  }
+
+  .badge-estado {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    &--pendiente {
+      background: var(--rojo-50);
+      color: var(--rojo-600);
+    }
+
+    &--pagada {
+      background: var(--azul-50);
+      color: var(--azul-700);
+    }
+  }
+
+  .boton-pagar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: var(--azul-700);
+    color: var(--blanco);
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+    transition: transform var(--transicion), background var(--transicion), box-shadow var(--transicion);
+
+    &:hover {
+      background: var(--azul-600);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(30, 64, 175, 0.3);
+    }
+
+    &:active {
+      transform: translateY(1px);
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  .fecha-pago-txt {
+    font-size: 0.82rem;
+    color: var(--tinta-600);
+    font-style: italic;
+  }
+
+  &__vacio {
+    text-align: center;
+    color: var(--tinta-400);
+    font-style: italic;
+    padding-block: 3.5rem !important;
+  }
+
+  .fila-pendiente {
+    background-color: rgba(217, 45, 32, 0.015);
+  }
+}

@@ -113,6 +113,56 @@
       }
     </section>
 
+    <!-- Notificaciones del Sistema (EPIC08) -->
+    <section class="bloque Aparecer" style="margin-bottom: 1.75rem;" aria-label="Notificaciones del sistema">
+      <header class="bloque__cabecera">
+        <h2>Avisos y Alertas Recientes</h2>
+        <span class="etiqueta">{{ notificacionesUsuario().length }}</span>
+      </header>
+      <ul class="notificaciones-lista">
+        @for (notif of notificacionesUsuario(); track notif.id) {
+          <li class="notif-item" 
+              [class.notif-item--sancion]="notif.tipo === 'SANCION_GENERADA'"
+              [class.notif-item--prestamo]="notif.tipo === 'PRESTAMO_AUTORIZADO'"
+              [class.notif-item--devolucion]="notif.tipo === 'DEVOLUCION_REGISTRADA'">
+            <span class="notif-item__icono" aria-hidden="true">
+              @switch (notif.tipo) {
+                @case ('PRESTAMO_AUTORIZADO') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                }
+                @case ('DEVOLUCION_REGISTRADA') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                }
+                @case ('SANCION_GENERADA') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4M12 16h.01" />
+                  </svg>
+                }
+                @case ('RESERVA_POR_EXPIRAR') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                }
+              }
+            </span>
+            <div class="notif-item__contenido">
+              <p>{{ notif.mensaje }}</p>
+              <small>{{ notif.fechaEnvio }}</small>
+            </div>
+          </li>
+        } @empty {
+          <li class="notif-item--vacia">No tienes alertas o avisos recientes en tu buzón.</li>
+        }
+      </ul>
+    </section>
+
     <div class="panel__columnas">
       <!-- Préstamos -->
       <section class="bloque" aria-label="Tus préstamos activos">

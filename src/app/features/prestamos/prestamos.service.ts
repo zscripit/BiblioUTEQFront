@@ -1,4 +1,5 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
 export type EstadoPrestamo = 'ACTIVO' | 'DEVUELTO' | 'VENCIDO';
@@ -36,6 +37,25 @@ export interface Prestamo {
 export interface PrestamoDetallado extends Prestamo {
   usuario: UsuarioBiblioteca;
   libro: LibroCatalogo;
+}
+
+export interface Sancion {
+  id: string;
+  usuarioId: string;
+  prestamoId: string;
+  monto: number;
+  estado: 'PENDIENTE' | 'PAGADA';
+  fechaGeneracion: string;
+  fechaPago: string | null;
+}
+
+export interface NotificacionSistema {
+  id: string;
+  usuarioId: string;
+  tipo: 'PRESTAMO_AUTORIZADO' | 'DEVOLUCION_REGISTRADA' | 'SANCION_GENERADA' | 'RESERVA_POR_EXPIRAR';
+  referenciaId: string;
+  mensaje: string;
+  fechaEnvio: string;
 }
 
 export interface FiltroHistorial {
@@ -80,6 +100,24 @@ function sumarDias(fechaIso: string, dias: number): string {
 function diasEntre(fechaInicioIso: string, fechaFinIso: string): number {
   const diferencia = new Date(fechaFinIso).getTime() - new Date(fechaInicioIso).getTime();
   return Math.round(diferencia / DIA_MS);
+}
+
+function toUuid(id: string, prefixChar: 'u' | 'l' | 'p' | 's' | 'n'): string {
+  if (id.includes('-')) return id;
+  const num = id.slice(1);
+  const padded = num.padStart(12, '0');
+  const typeCode = prefixChar === 'u' ? '1' : prefixChar === 'l' ? '2' : prefixChar === 'p' ? '3' : prefixChar === 's' ? '4' : '5';
+  return `00000000-0000-0000-0000-${typeCode}${padded}`;
+}
+
+function fromUuid(uuid: string): string {
+  if (!uuid) return '';
+  const parts = uuid.split('-');
+  const lastPart = parts[parts.length - 1];
+  const typeCode = lastPart.charAt(0);
+  const num = parseInt(lastPart.slice(1), 10).toString();
+  const prefix = typeCode === '1' ? 'u' : typeCode === '2' ? 'l' : typeCode === '3' ? 'p' : typeCode === '4' ? 's' : 'n';
+  return `${prefix}${num}`;
 }
 
 /**
@@ -172,9 +210,97 @@ export class PrestamosService {
     },
   ]);
 
+  private readonly _sanciones = signal<Sancion[]>([
+    {
+      id: 's1',
+      usuarioId: 'u1',
+      prestamoId: 'p3',
+      monto: 150,
+      estado: 'PENDIENTE',
+      fechaGeneracion: sumarDias(hoyIso(), -16),
+      fechaPago: null,
+    },
+    {
+      id: 's2',
+      usuarioId: 'u3',
+      prestamoId: 'p4',
+      monto: 90,
+      estado: 'PAGADA',
+      fechaGeneracion: sumarDias(hoyIso(), -5),
+      fechaPago: sumarDias(hoyIso(), -5),
+    }
+  ]);
+
+  private readonly _notificaciones = signal<NotificacionSistema[]>([
+    {
+      id: 'n1',
+      usuarioId: 'u1',
+      tipo: 'PRESTAMO_AUTORIZADO',
+      referenciaId: 'p1',
+      mensaje: 'Tu préstamo del libro Frankenstein ha sido autorizado.',
+      fechaEnvio: sumarDias(hoyIso(), -10),
+    },
+    {
+      id: 'n2',
+      usuarioId: 'u3',
+      tipo: 'SANCION_GENERADA',
+      referenciaId: 'p4',
+      mensaje: 'Se ha aplicado una multa de $90.00 a tu cuenta por entrega tardía.',
+      fechaEnvio: sumarDias(hoyIso(), -5),
+    }
+  ]);
+
   readonly usuarios = this._usuarios.asReadonly();
   readonly libros = this._libros.asReadonly();
   readonly prestamos = this._prestamos.asReadonly();
+  readonly sanciones = this._sanciones.asReadonly();
+  readonly notificaciones = this._notificaciones.asReadonly();
+
+  private readonly http = inject(HttpClient);
+  private readonly API_URL = 'http://localhost:8080/api/v1';
+
+  constructor() {
+    this.cargarDatosDesdeBackend();
+  }
+
+  private cargarDatosDesdeBackend() {
+    this.http.get<any[]>(`${this.API_URL}/sanciones`).subscribe({
+      next: (data) => {
+        const sancionesMapeadas: Sancion[] = data.map((s) => ({
+          id: fromUuid(s.id),
+          usuarioId: fromUuid(s.usuarioId),
+          prestamoId: fromUuid(s.prestamoId),
+          monto: s.monto,
+          estado: s.estado,
+          fechaGeneracion: s.fechaGeneracion ? s.fechaGeneracion.slice(0, 10) : hoyIso(),
+          fechaPago: s.fechaPago ? s.fechaPago.slice(0, 10) : null,
+        }));
+        this._sanciones.set(sancionesMapeadas);
+      },
+      error: (err) => console.error('Error al cargar sanciones del backend:', err)
+    });
+
+    this._usuarios().forEach((u) => {
+      const uuid = toUuid(u.id, 'u');
+      this.http.get<any[]>(`${this.API_URL}/notificaciones/usuario/${uuid}`).subscribe({
+        next: (data) => {
+          const notifsMapeadas: NotificacionSistema[] = data.map((n) => ({
+            id: fromUuid(n.id),
+            usuarioId: fromUuid(n.usuarioId),
+            tipo: n.tipo,
+            referenciaId: fromUuid(n.referenciaId),
+            mensaje: n.mensaje,
+            fechaEnvio: n.fechaEnvio ? n.fechaEnvio.slice(0, 10) : hoyIso(),
+          }));
+          this._notificaciones.update((lista) => {
+            const limpias = lista.filter((item) => item.usuarioId !== u.id);
+            return [...limpias, ...notifsMapeadas];
+          });
+        },
+        error: (err) => console.error(`Error al cargar notificaciones para ${u.nombre}:`, err)
+      });
+    });
+  }
 
   readonly historialDetallado = computed<PrestamoDetallado[]>(() =>
     this._prestamos()
@@ -266,6 +392,13 @@ export class PrestamosService {
       lista.map((l) => (l.id === libroId ? { ...l, ejemplaresDisponibles: l.ejemplaresDisponibles - 1 } : l)),
     );
 
+    this.enviarNotificacion(
+      usuarioId,
+      'PRESTAMO_AUTORIZADO',
+      prestamo.id,
+      `Tu préstamo del libro "${libro.titulo}" ha sido autorizado. Vence el ${prestamo.fechaVencimiento}.`
+    );
+
     return { ok: true, mensaje: `Préstamo registrado para ${usuario.nombre}.`, prestamo };
   }
 
@@ -329,6 +462,7 @@ export class PrestamosService {
     const tardia = diasRetraso > 0;
     const montoMulta = tardia ? diasRetraso * MULTA_POR_DIA_TARDIO : 0;
 
+    // Actualización local para UI instantánea
     this._prestamos.update((lista) =>
       lista.map((p) =>
         p.id === prestamoId
@@ -341,18 +475,22 @@ export class PrestamosService {
         l.id === prestamo.libroId ? { ...l, ejemplaresDisponibles: l.ejemplaresDisponibles + 1 } : l,
       ),
     );
-    if (tardia) {
-      // Simula el aviso a sancion-service: se refleja como una sanción pendiente del usuario.
-      this._usuarios.update((lista) =>
-        lista.map((u) =>
-          u.id === prestamo.usuarioId ? { ...u, sancionesPendientes: u.sancionesPendientes + 1 } : u,
-        ),
-      );
-    }
+
+    // LLAMADA HTTP A DEVOLUCIONES EN BACKEND
+    const payload = {
+      prestamoId: toUuid(prestamoId, 'p')
+    };
+    this.http.post<any>(`${this.API_URL}/devoluciones`, payload).subscribe({
+      next: () => {
+        // Recargar desde backend para sincronizar notificaciones y multas
+        this.cargarDatosDesdeBackend();
+      },
+      error: (err) => console.error('Error al registrar devolución en backend:', err)
+    });
 
     const mensaje = tardia
-      ? `Devolución registrada con ${diasRetraso} día(s) de retraso. Se notificó al servicio de sanciones (multa de $${montoMulta}).`
-      : `Devolución registrada a tiempo para ${usuario?.nombre ?? 'el usuario'}.`;
+      ? `Devolución registrada con ${diasRetraso} día(s) de retraso. Se aplicó una multa de $${montoMulta}.`
+      : `Devolución registrada a tiempo.`;
 
     return {
       ok: true,
@@ -362,6 +500,77 @@ export class PrestamosService {
       montoMulta,
       prestamo: { ...prestamo, estado: 'DEVUELTO', fechaDevolucion, diasRetraso, montoMulta },
     };
+  }
+
+  pagarSancion(sancionId: string): void {
+    const sUuid = toUuid(sancionId, 's');
+    this.http.put<any>(`${this.API_URL}/sanciones/${sUuid}/pagar`, {}).subscribe({
+      next: () => {
+        this._sanciones.update((lista) =>
+          lista.map((s) => {
+            if (s.id === sancionId) {
+              // rehabilitar usuario
+              this._usuarios.update((users) =>
+                users.map((u) =>
+                  u.id === s.usuarioId
+                    ? { ...u, sancionesPendientes: Math.max(0, u.sancionesPendientes - 1) }
+                    : u
+                )
+              );
+              return { ...s, estado: 'PAGADA', fechaPago: hoyIso() };
+            }
+            return s;
+          })
+        );
+      },
+      error: (err) => console.error('Error al registrar pago de sanción en backend:', err)
+    });
+  }
+
+  crearSancion(usuarioId: string, prestamoId: string, monto: number): void {
+    const payload = {
+      usuarioId: toUuid(usuarioId, 'u'),
+      prestamoId: toUuid(prestamoId, 'p'),
+      monto
+    };
+    this.http.post<any>(`${this.API_URL}/sanciones`, payload).subscribe({
+      next: (res) => {
+        const nuevaSancion: Sancion = {
+          id: fromUuid(res.id),
+          usuarioId: fromUuid(res.usuarioId),
+          prestamoId: fromUuid(res.prestamoId),
+          monto: res.monto,
+          estado: res.estado,
+          fechaGeneracion: res.fechaGeneracion ? res.fechaGeneracion.slice(0, 10) : hoyIso(),
+          fechaPago: null
+        };
+        this._sanciones.update((lista) => [nuevaSancion, ...lista]);
+      },
+      error: (err) => console.error('Error al registrar sanción en el backend:', err)
+    });
+  }
+
+  enviarNotificacion(usuarioId: string, tipo: 'PRESTAMO_AUTORIZADO' | 'DEVOLUCION_REGISTRADA' | 'SANCION_GENERADA' | 'RESERVA_POR_EXPIRAR', referenciaId: string, mensaje: string): void {
+    const payload = {
+      usuarioId: toUuid(usuarioId, 'u'),
+      tipo,
+      referenciaId: toUuid(referenciaId, 'p'),
+      mensaje
+    };
+    this.http.post<any>(`${this.API_URL}/notificaciones`, payload).subscribe({
+      next: (res) => {
+        const nuevaNotif: NotificacionSistema = {
+          id: fromUuid(res.id),
+          usuarioId: fromUuid(res.usuarioId),
+          tipo: res.tipo,
+          referenciaId: fromUuid(res.referenciaId),
+          mensaje: res.mensaje,
+          fechaEnvio: res.fechaEnvio ? res.fechaEnvio.slice(0, 10) : hoyIso()
+        };
+        this._notificaciones.update((lista) => [nuevaNotif, ...lista]);
+      },
+      error: (err) => console.error('Error al registrar notificación en el backend:', err)
+    });
   }
 
   /** DE03 — Historial de devoluciones con filtro opcional por usuario, libro o fecha. */
