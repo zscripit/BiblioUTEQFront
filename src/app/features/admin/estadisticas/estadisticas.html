@@ -1,0 +1,29 @@
+<main class="estadisticas-admin">
+  <header class="encabezado"><div><p>Panel de administracion</p><h1>Estadisticas de la biblioteca</h1></div><span>Actividad, demanda e incumplimientos</span></header>
+  @if (error()) { <div class="mensaje-error" role="alert">{{ error() }}</div> }
+  @if (cargando()) { <p class="cargando">Cargando estadisticas...</p> } @else {
+    <section class="periodo" aria-labelledby="titulo-periodo">
+      <div><p class="eyebrow">ES01</p><h2 id="titulo-periodo">Prestamos por periodo</h2><p>Consulta la actividad registrada dentro de un rango de fechas.</p></div>
+      <form (ngSubmit)="consultarPeriodo()">
+        <label>Desde<input type="date" name="fechaInicio" [(ngModel)]="fechaInicio" required /></label>
+        <label>Hasta<input type="date" name="fechaFin" [(ngModel)]="fechaFin" required /></label>
+        <button type="submit" [disabled]="consultandoPeriodo()">{{ consultandoPeriodo() ? 'Consultando...' : 'Consultar' }}</button>
+      </form>
+      <article class="total"><strong>{{ periodo()?.totalPrestamos ?? 0 }}</strong><span>prestamos realizados</span>@if (periodo()) { <small>{{ periodo()!.fechaInicio }} al {{ periodo()!.fechaFin }}</small> }</article>
+    </section>
+    <div class="rankings">
+      <section class="ranking" aria-labelledby="titulo-libros">
+        <header><div><p class="eyebrow">ES02</p><h2 id="titulo-libros">Libros mas prestados</h2></div><span>Top {{ libros().length }}</span></header>
+        <ol>@for (libro of libros(); track libro.libroId; let posicion = $index) {
+          <li><span class="posicion">{{ posicion + 1 }}</span><div class="detalle"><div><strong>{{ libro.titulo ?? 'Libro no disponible' }}</strong><small>{{ libro.isbn ?? libro.libroId }}</small></div><div class="barra"><span [style.width]="ancho(libro.totalPrestamos, maxPrestamosLibro())"></span></div></div><strong class="conteo">{{ libro.totalPrestamos }}</strong></li>
+        } @empty { <li class="vacio">No hay prestamos registrados.</li> }</ol>
+      </section>
+      <section class="ranking" aria-labelledby="titulo-sanciones">
+        <header><div><p class="eyebrow">ES03</p><h2 id="titulo-sanciones">Usuarios con mas sanciones</h2></div><span>Top {{ usuariosSancionados().length }}</span></header>
+        <ol>@for (usuario of usuariosSancionados(); track usuario.usuarioId; let posicion = $index) {
+          <li><span class="posicion">{{ posicion + 1 }}</span><div class="detalle"><div><strong>{{ usuario.nombre }}</strong><small>{{ usuario.email }} @if (usuario.activo === false) { · Inactivo }</small></div><div class="barra barra--sancion"><span [style.width]="ancho(usuario.totalSanciones, maxSanciones())"></span></div></div><strong class="conteo">{{ usuario.totalSanciones }}</strong></li>
+        } @empty { <li class="vacio">No hay sanciones registradas.</li> }</ol>
+      </section>
+    </div>
+  }
+</main>
