@@ -1,48 +1,5 @@
 <div class="panel">
-  <header class="panel__barra">
-    <div class="contenedor panel__barra-interior">
-      <div class="panel__izquierda">
-        <button
-          type="button"
-          class="hamburguesa"
-          (click)="alternarMenu()"
-          [class.hamburguesa--activa]="menuAbierto()"
-          [attr.aria-expanded]="menuAbierto()"
-          aria-label="Abrir o cerrar el menú"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-
-        <a
-          routerLink="/bibliotecario"
-          class="panel__marca"
-          aria-label="Biblioteca UTEQ — Panel de préstamos"
-        >
-          <span aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              <path d="M9 7h6M9 11h4" />
-            </svg>
-          </span>
-          <strong>Biblioteca UTEQ · Préstamos</strong>
-        </a>
-
-        <span class="panel__modo">Modo bibliotecario</span>
-      </div>
-
-      <div class="panel__chip">
-        <div class="panel__datos">
-          <strong>{{ usuario()?.nombre ?? 'Bibliotecario' }}</strong>
-          <small>{{ usuario()?.correo ?? '' }}</small>
-        </div>
-        <span class="panel__avatar" aria-hidden="true">{{ iniciales() }}</span>
-      </div>
-    </div>
-  </header>
+  <app-panel-header [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
 
   <app-prestamos-sidebar [abierto]="menuAbierto()" (cerrar)="menuAbierto.set(false)" />
 
@@ -50,7 +7,5 @@
     <router-outlet />
   </main>
 
-  <footer class="panel__pie">
-    <p>© Biblioteca UTEQ · Universidad Tecnológica de Querétaro</p>
-  </footer>
+  <app-panel-footer />
 </div>

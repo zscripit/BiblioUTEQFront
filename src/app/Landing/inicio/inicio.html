@@ -1,10 +1,33 @@
 <!-- ============ HERO ============ -->
-<section class="heroe">
+<section
+  class="heroe"
+  #heroRef
+  [class.heroe--js]="heroListo()"
+  [class.heroe--en-vista]="heroVisible()"
+  [style.--parallax-x]="(parallaxX() * 22) + 'px'"
+  [style.--parallax-y]="(parallaxY() * 22) + 'px'"
+>
+  <div class="heroe__formas" aria-hidden="true">
+    <span class="forma forma--uno"></span>
+    <span class="forma forma--dos"></span>
+    <span class="forma forma--tres"></span>
+  </div>
+
   <div class="contenedor heroe__interior">
-    <div class="heroe__texto aparecer">
-      <span class="etiqueta etiqueta--celeste">Universidad Tecnológica de Querétaro</span>
-      <h1>Tu biblioteca universitaria, <em>ahora digital</em></h1>
-      <p>
+    <div class="heroe__texto">
+      <span class="etiqueta etiqueta--celeste heroe__insignia">Universidad Tecnológica de Querétaro</span>
+      <h1>
+        <span class="heroe__linea heroe__linea--1">Tu biblioteca universitaria,</span>
+        <span class="heroe__linea heroe__linea--2">
+          <em>
+            ahora digital
+            <svg class="heroe__trazo" viewBox="0 0 220 18" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M4 12 C 60 2, 160 2, 216 12" pathLength="100" />
+            </svg>
+          </em>
+        </span>
+      </h1>
+      <p class="heroe__parrafo">
         Consulta el catálogo, gestiona tus préstamos y reserva salas de estudio desde un solo
         lugar. La Biblioteca UTEQ acompaña tu formación académica en cualquier momento y desde
         cualquier dispositivo.
@@ -21,7 +44,7 @@
       </div>
     </div>
 
-    <div class="heroe__visual aparecer" aria-hidden="true">
+    <div class="heroe__visual" aria-hidden="true">
       <div class="libro-flotante libro-flotante--uno">
         <span class="libro-flotante__lomo"></span>
         <strong>Ingeniería de Software</strong>
@@ -40,6 +63,13 @@
     </div>
   </div>
 
+  <a href="#servicios" class="heroe__desplazate" aria-label="Desplázate para ver más contenido">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  </a>
+
   <div class="contenedor heroe__estadisticas">
     @for (dato of estadisticas; track dato.texto) {
       <div class="heroe__dato">
@@ -48,6 +78,10 @@
       </div>
     }
   </div>
+
+  <svg class="heroe__transicion" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+    <path class="heroe__transicion-trazo" d="M0,38 C 320,95 1100,-10 1440,46 L1440,90 L0,90 Z" />
+  </svg>
 </section>
 
 <!-- ============ SERVICIOS ============ -->

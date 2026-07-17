@@ -1,0 +1,123 @@
+<div class="panel">
+  <app-panel-header [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
+
+  <app-sidebar [abierto]="menuAbierto()" (cerrar)="menuAbierto.set(false)" />
+
+  <main class="contenedor panel__contenido">
+    <section class="historial">
+      <header class="historial__encabezado">
+        <div>
+          <p class="historial__eyebrow">Usuario</p>
+          <h2>Historial</h2>
+        </div>
+      </header>
+
+      <div class="historial__tabs" role="tablist" aria-label="Secciones del historial">
+        <button
+          type="button"
+          class="historial__tab"
+          [class.historial__tab--activo]="pestana() === 'PRESTAMOS'"
+          (click)="cambiarPestana('PRESTAMOS')"
+        >
+          Préstamos y devoluciones
+        </button>
+        <button
+          type="button"
+          class="historial__tab"
+          [class.historial__tab--activo]="pestana() === 'RESERVAS'"
+          (click)="cambiarPestana('RESERVAS')"
+        >
+          Reservas
+        </button>
+        <button
+          type="button"
+          class="historial__tab"
+          [class.historial__tab--activo]="pestana() === 'SANCIONES'"
+          (click)="cambiarPestana('SANCIONES')"
+        >
+          Sanciones
+        </button>
+      </div>
+
+      @if (pestana() === 'PRESTAMOS') {
+        <div class="historial__lista">
+          @for (prestamo of historialPrestamos(); track prestamo.id) {
+            <article class="historial__card">
+              <div class="historial__info">
+                <h3>{{ prestamo.libro?.titulo ?? 'Libro no disponible' }}</h3>
+                <p>{{ prestamo.libro?.autor }}</p>
+                <p><strong>Prestado:</strong> {{ prestamo.fechaPrestamo }} · <strong>Vence:</strong> {{ prestamo.fechaVencimiento }}</p>
+                @if (prestamo.estado === 'DEVUELTO' && prestamo.fechaDevolucion) {
+                  <p><strong>Devuelto:</strong> {{ prestamo.fechaDevolucion }}</p>
+                }
+                @if (prestamo.estado === 'VENCIDO') {
+                  <p class="historial__alerta">{{ prestamo.diasRetraso }} día(s) de retraso</p>
+                }
+              </div>
+              <span
+                class="historial__estado"
+                [class.historial__estado--positivo]="prestamo.estado === 'ACTIVO'"
+                [class.historial__estado--negativo]="prestamo.estado === 'VENCIDO'"
+                [class.historial__estado--neutro]="prestamo.estado === 'DEVUELTO'"
+              >
+                {{ prestamo.estado }}
+              </span>
+            </article>
+          } @empty {
+            <p class="historial__vacio">Todavía no tienes préstamos registrados.</p>
+          }
+        </div>
+      }
+
+      @if (pestana() === 'RESERVAS') {
+        <div class="historial__lista">
+          @for (reserva of historialReservas(); track reserva.id) {
+            <article class="historial__card">
+              <div class="historial__info">
+                <h3>{{ reserva.libro?.titulo ?? 'Libro no disponible' }}</h3>
+                <p><strong>Reservado:</strong> {{ reserva.fechaReserva }} · <strong>Vencía:</strong> {{ reserva.fechaExpiracion }}</p>
+              </div>
+              <span
+                class="historial__estado"
+                [class.historial__estado--positivo]="reserva.estado === 'ACTIVA'"
+                [class.historial__estado--neutro]="reserva.estado === 'CONVERTIDA'"
+                [class.historial__estado--negativo]="reserva.estado === 'CANCELADA' || reserva.estado === 'EXPIRADA'"
+              >
+                {{ reserva.estado }}
+              </span>
+            </article>
+          } @empty {
+            <p class="historial__vacio">Todavía no tienes reservas registradas.</p>
+          }
+        </div>
+      }
+
+      @if (pestana() === 'SANCIONES') {
+        <div class="historial__lista">
+          @for (sancion of historialSanciones(); track sancion.id) {
+            <article class="historial__card">
+              <div class="historial__info">
+                <h3>{{ sancion.libro?.titulo ?? 'Libro no disponible' }}</h3>
+                <p><strong>Generada:</strong> {{ sancion.fechaGeneracion }} · <strong>Monto:</strong> ${{ sancion.monto }}</p>
+                @if (sancion.fechaPago) {
+                  <p><strong>Pagada:</strong> {{ sancion.fechaPago }}</p>
+                }
+              </div>
+              <span
+                class="historial__estado"
+                [class.historial__estado--neutro]="sancion.estado === 'PAGADA'"
+                [class.historial__estado--negativo]="sancion.estado === 'PENDIENTE'"
+              >
+                {{ sancion.estado }}
+              </span>
+            </article>
+          } @empty {
+            <p class="historial__vacio">No tienes sanciones registradas.</p>
+          }
+        </div>
+      }
+    </section>
+  </main>
+
+  <app-panel-footer />
+</div>

@@ -3,19 +3,86 @@
   position: relative;
   color: var(--blanco);
   background:
+    radial-gradient(620px 420px at 20% 42%, rgba(56, 189, 248, 0.16), transparent 65%),
     radial-gradient(1000px 500px at 85% -20%, rgba(56, 189, 248, 0.22), transparent 60%),
     radial-gradient(800px 600px at -10% 110%, rgba(59, 130, 246, 0.3), transparent 55%),
     linear-gradient(155deg, var(--azul-800), var(--azul-950));
   overflow: hidden;
+  --parallax-x: 0px;
+  --parallax-y: 0px;
 }
 
 .heroe::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -20px;
   background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 28px 28px;
+  transform: translate3d(var(--parallax-x), var(--parallax-y), 0);
+  transition: transform var(--transition-base);
   pointer-events: none;
+}
+
+/* --- Formas geométricas flotantes (decorativas) --- */
+.heroe__formas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translate3d(calc(var(--parallax-x) * -1.4), calc(var(--parallax-y) * -1.4), 0);
+  transition: transform var(--transition-base);
+}
+
+.forma {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.22);
+  opacity: 0.55;
+}
+
+.forma--uno {
+  width: 230px;
+  height: 230px;
+  top: -70px;
+  right: 10%;
+  animation: forma-flotar 15s ease-in-out infinite;
+}
+
+.forma--dos {
+  width: 150px;
+  height: 150px;
+  bottom: 6%;
+  left: 5%;
+  border-color: rgba(255, 255, 255, 0.14);
+  animation: forma-flotar 11s ease-in-out infinite reverse;
+}
+
+.forma--tres {
+  width: 90px;
+  height: 90px;
+  top: 42%;
+  left: 40%;
+  border-color: rgba(56, 189, 248, 0.16);
+  animation: forma-girar 24s linear infinite;
+}
+
+@keyframes forma-flotar {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.06);
+  }
+}
+
+@keyframes forma-girar {
+  from {
+    transform: rotate(0deg) translateX(14px);
+  }
+  to {
+    transform: rotate(360deg) translateX(14px);
+  }
 }
 
 .heroe__interior {
@@ -28,6 +95,71 @@
   padding-block: clamp(3.5rem, 9vw, 6.5rem) clamp(2.5rem, 6vw, 4rem);
 }
 
+/* --- Entrada del texto, escalonada por línea --- */
+.heroe__insignia,
+.heroe__linea,
+.heroe__parrafo,
+.heroe__acciones {
+  opacity: 1;
+}
+
+.heroe--js .heroe__insignia,
+.heroe--js .heroe__linea,
+.heroe--js .heroe__parrafo,
+.heroe--js .heroe__acciones {
+  opacity: 0;
+}
+
+.heroe--js.heroe--en-vista .heroe__insignia {
+  animation: heroe-rebote 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.heroe--js.heroe--en-vista .heroe__linea--1 {
+  animation: heroe-aparecer var(--transition-slow) 0.14s both;
+}
+
+.heroe--js.heroe--en-vista .heroe__linea--2 {
+  animation: heroe-aparecer var(--transition-slow) 0.3s both;
+}
+
+.heroe--js.heroe--en-vista .heroe__parrafo {
+  animation: heroe-aparecer var(--transition-slow) 0.48s both;
+}
+
+.heroe--js.heroe--en-vista .heroe__acciones {
+  animation: heroe-aparecer var(--transition-slow) 0.64s both;
+}
+
+@keyframes heroe-rebote {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(3px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes heroe-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.heroe__linea {
+  display: block;
+}
+
 .heroe__texto h1 {
   color: var(--blanco);
   font-size: clamp(2.1rem, 5vw, 3.4rem);
@@ -38,6 +170,49 @@
   font-style: normal;
   color: var(--celeste-500);
   position: relative;
+  display: inline-block;
+}
+
+.heroe--js.heroe--en-vista .heroe__texto h1 em {
+  animation: heroe-brillo 3.4s ease-in-out 1.2s infinite alternate;
+}
+
+@keyframes heroe-brillo {
+  from {
+    text-shadow: 0 0 0 rgba(56, 212, 255, 0);
+  }
+  to {
+    text-shadow: 0 0 16px rgba(56, 212, 255, 0.55);
+  }
+}
+
+.heroe__trazo {
+  position: absolute;
+  left: 0;
+  bottom: -0.2em;
+  width: 100%;
+  height: 0.5em;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.heroe__trazo path {
+  fill: none;
+  stroke: var(--celeste-500);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+.heroe--js.heroe--en-vista .heroe__trazo path {
+  animation: heroe-trazo 0.9s ease 0.75s forwards;
+}
+
+@keyframes heroe-trazo {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .heroe__texto p {
@@ -53,9 +228,49 @@
   margin-top: 2rem;
 }
 
+/* --- Botones del hero: micro-interacciones --- */
+.heroe__acciones .boton--celeste svg {
+  transition: transform var(--transition-fast);
+}
+
+.heroe__acciones .boton--celeste:hover {
+  box-shadow: 0 14px 34px rgba(56, 212, 255, 0.5);
+}
+
+.heroe__acciones .boton--celeste:hover svg {
+  transform: translateX(4px);
+}
+
+.heroe__acciones .boton--claro {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.heroe__acciones .boton--claro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(56, 212, 255, 0.2);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-base);
+  z-index: -1;
+}
+
+.heroe__acciones .boton--claro:hover {
+  border-color: var(--celeste-500);
+  color: var(--blanco);
+}
+
+.heroe__acciones .boton--claro:hover::before {
+  transform: scaleX(1);
+}
+
 /* --- Visual: libros flotantes --- */
 .heroe__visual {
   position: relative;
+  z-index: 1;
   min-height: 360px;
 }
 
@@ -70,7 +285,19 @@
   background: rgba(255, 255, 255, 0.97);
   color: var(--tinta-900);
   box-shadow: var(--sombra-lg);
-  animation: flotar 5.5s ease-in-out infinite;
+  opacity: 1;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.heroe--js .libro-flotante {
+  opacity: 0;
+}
+
+.libro-flotante:hover {
+  animation-play-state: paused;
+  transform: translateY(-6px) scale(1.035);
+  box-shadow: 0 28px 56px rgba(6, 16, 39, 0.4);
+  z-index: 2;
 }
 
 .libro-flotante strong {
@@ -101,22 +328,56 @@
   background: var(--azul-100);
 }
 
+.heroe--js.heroe--en-vista .libro-flotante__lomo {
+  animation: lomo-pulso 2.4s ease-in-out infinite;
+}
+
+@keyframes lomo-pulso {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(56, 212, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(56, 212, 255, 0.5);
+  }
+}
+
 .libro-flotante--uno {
   top: 6%;
   right: 8%;
-  animation-delay: 0s;
 }
 
 .libro-flotante--dos {
   top: 38%;
   left: 4%;
-  animation-delay: 1.4s;
 }
 
 .libro-flotante--tres {
   bottom: 4%;
   right: 16%;
-  animation-delay: 2.6s;
+}
+
+.heroe--js.heroe--en-vista .libro-flotante--uno {
+  animation: libro-entrada 0.7s ease 0.55s both, flotar 5.5s ease-in-out 1.25s infinite;
+}
+
+.heroe--js.heroe--en-vista .libro-flotante--dos {
+  animation: libro-entrada 0.7s ease 0.78s both, flotar 6.2s ease-in-out 2.6s infinite;
+}
+
+.heroe--js.heroe--en-vista .libro-flotante--tres {
+  animation: libro-entrada 0.7s ease 1s both, flotar 5s ease-in-out 3.6s infinite;
+}
+
+@keyframes libro-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes flotar {
@@ -129,6 +390,43 @@
   }
 }
 
+/* --- Invitación a hacer scroll --- */
+.heroe__desplazate {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -0.5rem;
+  transition: color var(--transition-fast);
+}
+
+.heroe__desplazate:hover {
+  color: var(--celeste-500);
+}
+
+.heroe__desplazate svg {
+  animation: desplazate-rebote 1.8s ease-in-out infinite;
+}
+
+@keyframes desplazate-rebote {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .heroe__desplazate {
+    display: none;
+  }
+}
+
 /* --- Franja de estadísticas --- */
 .heroe__estadisticas {
   position: relative;
@@ -138,6 +436,22 @@
   gap: 1rem;
   padding-block: 1.8rem 2.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* --- Transición hacia la siguiente sección --- */
+.heroe__transicion {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  z-index: 2;
+  width: 100%;
+  height: clamp(36px, 7vw, 80px);
+  pointer-events: none;
+}
+
+.heroe__transicion-trazo {
+  fill: var(--blanco);
 }
 
 .heroe__dato {

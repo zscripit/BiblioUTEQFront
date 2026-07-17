@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, inject, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 interface Servicio {
@@ -20,6 +20,65 @@ interface Paso {
   styleUrl: './inicio.scss',
 })
 export class Inicio {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly heroRef = viewChild<ElementRef<HTMLElement>>('heroRef');
+
+  /**
+   * `heroListo` distingue "hay JS corriendo" de la marca estática que se sirve por SSR/prerender:
+   * el hero es visible por defecto (sin JS) y solo se oculta para animarse una vez que el
+   * componente confirma que puede reproducir la entrada. Evita contenido invisible sin JS.
+   */
+  protected readonly heroListo = signal(false);
+  protected readonly heroVisible = signal(false);
+  protected readonly parallaxX = signal(0);
+  protected readonly parallaxY = signal(0);
+
+  constructor() {
+    afterNextRender(() => {
+      this.heroListo.set(true);
+
+      const hero = this.heroRef()?.nativeElement;
+      if (!hero) return;
+
+      const observador = new IntersectionObserver(
+        ([entrada]) => {
+          if (entrada.isIntersecting) {
+            this.heroVisible.set(true);
+            observador.disconnect();
+          }
+        },
+        { threshold: 0.15 },
+      );
+      observador.observe(hero);
+
+      const prefiereMovimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!prefiereMovimientoReducido) {
+        hero.addEventListener('mousemove', this.moverParallax);
+        hero.addEventListener('mouseleave', this.reiniciarParallax);
+      }
+
+      this.destroyRef.onDestroy(() => {
+        observador.disconnect();
+        hero.removeEventListener('mousemove', this.moverParallax);
+        hero.removeEventListener('mouseleave', this.reiniciarParallax);
+      });
+    });
+  }
+
+  /** Desplazamiento normalizado (-0.5..0.5) del mouse dentro del hero, para el efecto parallax. */
+  private readonly moverParallax = (evento: MouseEvent): void => {
+    const hero = this.heroRef()?.nativeElement;
+    if (!hero) return;
+    const rect = hero.getBoundingClientRect();
+    this.parallaxX.set((evento.clientX - rect.left) / rect.width - 0.5);
+    this.parallaxY.set((evento.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  private readonly reiniciarParallax = (): void => {
+    this.parallaxX.set(0);
+    this.parallaxY.set(0);
+  };
+
   protected readonly estadisticas = [
     { valor: '12,500+', texto: 'Títulos en catálogo' },
     { valor: '3,200+', texto: 'Estudiantes activos' },

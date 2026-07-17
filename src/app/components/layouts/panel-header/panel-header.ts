@@ -1,11 +1,10 @@
 import { Component, ElementRef, HostListener, afterNextRender, computed, inject, input, output, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Auth } from '../../../services/auth';
 
 interface EnlaceNav {
   etiqueta: string;
-  ruta?: string;
-  fragmento?: string;
+  ruta: string;
   exacto?: boolean;
 }
 
@@ -22,7 +21,6 @@ interface EnlaceNav {
 })
 export class PanelHeader {
   private readonly auth = inject(Auth);
-  private readonly router = inject(Router);
   private readonly elementoAnfitrion = inject(ElementRef<HTMLElement>);
 
   readonly menuAbierto = input(false);
@@ -37,7 +35,7 @@ export class PanelHeader {
     { etiqueta: 'Catálogo', ruta: '/catalogo' },
     { etiqueta: 'Mis Préstamos', ruta: '/mis-prestamos' },
     { etiqueta: 'Reservas', ruta: '/mis-reservas' },
-    { etiqueta: 'Historial', fragmento: 'avisos' },
+    { etiqueta: 'Historial', ruta: '/historial' },
   ];
 
   protected readonly iniciales = computed(() => {
@@ -77,14 +75,5 @@ export class PanelHeader {
   protected cerrarSesion(): void {
     this.menuUsuarioAbierto.set(false);
     this.auth.cerrarSesion();
-  }
-
-  /**
-   * "Mis Préstamos"/"Historial" son secciones del Home; desde cualquier página se navega
-   * ahí con el fragmento, y Home se encarga de hacer scroll cuando lo detecta.
-   */
-  protected irASeccion(fragmento: string, evento: Event): void {
-    evento.preventDefault();
-    this.router.navigate(['/home'], { fragment: fragmento });
   }
 }

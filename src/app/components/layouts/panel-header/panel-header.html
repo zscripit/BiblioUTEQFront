@@ -31,20 +31,12 @@
       <ul class="panel__nav-lista">
         @for (enlace of enlacesNav; track enlace.etiqueta) {
           <li>
-            @if (enlace.ruta) {
-              <a
-                class="panel__nav-enlace"
-                [routerLink]="enlace.ruta"
-                routerLinkActive="panel__nav-enlace--activo"
-                [routerLinkActiveOptions]="{ exact: !!enlace.exacto }"
-              >{{ enlace.etiqueta }}</a>
-            } @else {
-              <a
-                class="panel__nav-enlace"
-                href="#"
-                (click)="irASeccion(enlace.fragmento!, $event)"
-              >{{ enlace.etiqueta }}</a>
-            }
+            <a
+              class="panel__nav-enlace"
+              [routerLink]="enlace.ruta"
+              routerLinkActive="panel__nav-enlace--activo"
+              [routerLinkActiveOptions]="{ exact: !!enlace.exacto }"
+            >{{ enlace.etiqueta }}</a>
           </li>
         }
       </ul>
