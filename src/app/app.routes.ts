@@ -40,6 +40,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/libros/libros').then((m) => m.LibrosAdmin),
         title: 'Biblioteca UTEQ | Gestión de libros',
       },
+      {
+        path: 'admin/estadisticas',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/estadisticas/estadisticas').then((m) => m.EstadisticasAdmin),
+        title: 'Biblioteca UTEQ | Estadisticas',
+      },
     ],
   },
   {

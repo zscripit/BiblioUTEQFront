@@ -21,6 +21,26 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'perfil',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'mis-reservas',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'mis-prestamos',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'historial',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'admin/**',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender,
   },

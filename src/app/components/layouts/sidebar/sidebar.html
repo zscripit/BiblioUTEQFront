@@ -159,6 +159,17 @@
           <span>Administrar usuarios</span>
         </a>
       </li>
+      <li>
+        <a routerLink="/admin/estadisticas" routerLinkActive="sidebar__enlace--activo" class="sidebar__enlace" (click)="cerrar.emit()">
+          <span class="sidebar__icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19V9M10 19V5M16 19v-7M22 19V2" />
+              <path d="M2 19h22" />
+            </svg>
+          </span>
+          <span>Estadisticas</span>
+        </a>
+      </li>
       }
       <li>
         <a routerLink="/admin/libros" routerLinkActive="sidebar__enlace--activo" class="sidebar__enlace" (click)="cerrar.emit()">
