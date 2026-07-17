@@ -293,6 +293,20 @@ export class PrestamosService {
     });
   }
 
+  /** Historial completo de reservas del usuario indicado (autoservicio: cualquier estado). */
+  cargarHistorialReservasDeUsuario(usuarioId: string): void {
+    this.http.get<any[]>(`${this.API_URL}/reservas/usuario/${usuarioId}`).subscribe({
+      next: (data) => {
+        const mapeadas = data.map((r) => this.mapReserva(r));
+        this._reservas.update((lista) => [
+          ...lista.filter((r) => r.usuarioId !== usuarioId),
+          ...mapeadas,
+        ]);
+      },
+      error: (err) => console.error('Error al cargar el historial de reservas:', err),
+    });
+  }
+
   private mapReserva(r: any): ReservaLibro {
     return {
       id: r.id,

@@ -45,6 +45,11 @@
 
   --alto-header: 76px;
   --transicion: 180ms ease;
+
+  /* Timing de animaciones */
+  --transition-fast: 150ms ease;
+  --transition-base: 280ms ease;
+  --transition-slow: 550ms ease;
 }
 
 /* ---------- Reset ---------- */

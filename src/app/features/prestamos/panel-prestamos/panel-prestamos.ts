@@ -1,12 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { Auth } from '../../../services/auth';
+import { PanelHeader } from '../../../components/layouts/panel-header/panel-header';
+import { PanelFooter } from '../../../components/layouts/panel-footer/panel-footer';
 import { PrestamosSidebar } from '../prestamos-sidebar/prestamos-sidebar';
 import { PrestamosService } from '../prestamos.service';
 
 @Component({
   selector: 'app-panel-prestamos',
-  imports: [RouterLink, RouterOutlet, PrestamosSidebar],
+  imports: [RouterOutlet, PanelHeader, PanelFooter, PrestamosSidebar],
   templateUrl: './panel-prestamos.html',
   styleUrl: './panel-prestamos.scss',
 })
@@ -15,17 +17,7 @@ export class PanelPrestamos {
   private readonly router = inject(Router);
   private readonly prestamosService = inject(PrestamosService);
 
-  protected readonly usuario = this.auth.usuario;
   protected readonly menuAbierto = signal(false);
-
-  protected readonly iniciales = computed(() => {
-    const nombre = this.usuario()?.nombre ?? 'Bibliotecario';
-    return nombre
-      .split(' ')
-      .slice(0, 2)
-      .map((parte) => parte.charAt(0).toUpperCase())
-      .join('');
-  });
 
   constructor() {
     // Solo front-end: si no hay sesión activa, regresamos al login.

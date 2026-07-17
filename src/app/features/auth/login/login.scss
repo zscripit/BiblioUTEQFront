@@ -1,33 +1,41 @@
-.opciones {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.4rem;
-  font-size: 0.9rem;
-}
-
-.opciones__recordar {
+/* --- Botón principal: icono con desplazamiento en hover --- */
+.login__boton {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.login__boton svg {
+  transition: transform var(--transition-fast, 150ms ease);
+}
+
+.login__boton:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+/* --- Beneficios de iniciar sesión --- */
+.login__beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1.8rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--borde);
+}
+
+.login__beneficios li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
   color: var(--tinta-600);
+  font-size: 0.92rem;
 }
 
-.opciones__recordar input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--azul-700);
-  cursor: pointer;
-}
-
-.opciones__olvide {
-  color: var(--azul-700);
-  font-weight: 600;
-}
-
-.opciones__olvide:hover {
-  text-decoration: underline;
+.login__beneficios svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 0.1rem;
+  color: var(--azul-600);
 }

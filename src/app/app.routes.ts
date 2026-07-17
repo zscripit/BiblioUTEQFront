@@ -82,6 +82,12 @@ export const routes: Routes = [
     title: 'Biblioteca UTEQ | Mis préstamos',
   },
   {
+    path: 'historial',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/historial/historial').then((m) => m.Historial),
+    title: 'Biblioteca UTEQ | Historial',
+  },
+  {
     // Panel del bibliotecario (EPIC05 préstamos + EPIC06 devoluciones)
     path: 'bibliotecario',
     canActivate: [authGuard],
