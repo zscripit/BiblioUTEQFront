@@ -57,7 +57,7 @@ export class MisReservas {
 
     const id = this.usuarioId();
     if (id) {
-      this.prestamosService.cargarReservasDeUsuario(id);
+      this.prestamosService.cargarHistorialReservasDeUsuario(id);
     }
   }
 
