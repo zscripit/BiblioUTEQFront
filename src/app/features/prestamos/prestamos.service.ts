@@ -78,6 +78,11 @@ export interface ReservaLibro {
   fechaExpiracion: string;
 }
 
+export interface ReservaDetallada extends ReservaLibro {
+  usuario: UsuarioBiblioteca;
+  libro: LibroCatalogo;
+}
+
 export interface FiltroHistorial {
   usuarioId?: string;
   desde?: string;
@@ -279,6 +284,14 @@ export class PrestamosService {
     };
   }
 
+  /** Todas las reservas del sistema (requiere rol ADMINISTRADOR o INSTRUCTOR en el backend). */
+  cargarReservas(): void {
+    this.http.get<any[]>(`${this.API_URL}/reservas`).subscribe({
+      next: (data) => this._reservas.set(data.map((r) => this.mapReserva(r))),
+      error: (err) => console.error('Error al cargar todas las reservas:', err),
+    });
+  }
+
   /** Reservas activas del usuario indicado. */
   cargarReservasDeUsuario(usuarioId: string): void {
     this.http.get<any[]>(`${this.API_URL}/reservas/usuario/${usuarioId}/activas`).subscribe({
@@ -323,6 +336,19 @@ export class PrestamosService {
       .map((prestamo) => this.detallar(prestamo))
       .filter((prestamo): prestamo is PrestamoDetallado => prestamo !== null)
       .sort((a, b) => b.fechaPrestamo.localeCompare(a.fechaPrestamo)),
+  );
+
+  /** Solicitudes (reservas ACTIVA) de todos los usuarios, listas para convertirse en préstamo. */
+  readonly solicitudesPendientes = computed<ReservaDetallada[]>(() =>
+    this._reservas()
+      .filter((reserva) => reserva.estado === 'ACTIVA')
+      .map((reserva) => {
+        const usuario = this._usuarios().find((u) => u.id === reserva.usuarioId);
+        const libro = this._libros().find((l) => l.id === reserva.libroId);
+        return usuario && libro ? { ...reserva, usuario, libro } : null;
+      })
+      .filter((reserva): reserva is ReservaDetallada => reserva !== null)
+      .sort((a, b) => a.fechaReserva.localeCompare(b.fechaReserva)),
   );
 
   buscarUsuarios(termino: string): UsuarioBiblioteca[] {

@@ -23,6 +23,37 @@
     </div>
   }
 
+  @if (!reservaId()) {
+    <div class="campo">
+      <label>Solicitudes pendientes</label>
+      <ul class="lista-seleccionable">
+        @for (solicitud of solicitudes(); track solicitud.id) {
+          <li>
+            <button type="button" (click)="seleccionarSolicitud(solicitud)">
+              <div>
+                <strong>{{ solicitud.libro.titulo }}</strong>
+                <small>{{ solicitud.usuario.nombre }} · {{ solicitud.usuario.correo }}</small>
+              </div>
+              <span class="pastilla pastilla--alerta">Reservado hasta {{ solicitud.fechaExpiracion }}</span>
+            </button>
+          </li>
+        } @empty {
+          <li class="lista-seleccionable__vacio">No hay solicitudes pendientes por ahora.</li>
+        }
+      </ul>
+    </div>
+  } @else {
+    <div class="tarjeta-seleccion">
+      <div>
+        <strong>Solicitud seleccionada</strong>
+        <small>Convirtiendo una reserva en préstamo.</small>
+      </div>
+      <button type="button" class="boton boton--contorno" (click)="cancelarSeleccion()">
+        Cambiar
+      </button>
+    </div>
+  }
+
   <div class="formulario-prestamo">
     <!-- Usuario -->
     <div class="seleccion">
@@ -57,6 +88,9 @@
           >
             {{ usuario.estado }}
           </span>
+          <button type="button" class="boton boton--contorno" (click)="cambiarUsuario()">
+            Cambiar
+          </button>
         </div>
       } @else {
         <ul class="lista-seleccionable">
@@ -146,6 +180,9 @@
               {{ libro.ejemplaresDisponibles }} disponibles
             </span>
           }
+          <button type="button" class="boton boton--contorno" (click)="cambiarLibro()">
+            Cambiar
+          </button>
         </div>
       } @else {
         <ul class="lista-seleccionable">

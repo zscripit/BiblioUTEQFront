@@ -1,76 +1,46 @@
-<section class="bloque aparecer" aria-label="Préstamos activos de un usuario">
+<section class="bloque aparecer" aria-label="Préstamos activos">
   <header class="bloque__cabecera">
     <h1>Préstamos activos</h1>
     <span class="etiqueta">PR02</span>
   </header>
   <p class="bloque__descripcion">
-    Consulta qué libros tiene en su poder un usuario y cuándo debe devolverlos.
+    Consulta qué libros tiene en su poder cada usuario y cuándo debe devolverlos.
   </p>
 
-  @if (usuarioSeleccionado(); as usuario) {
-    <div class="tarjeta-seleccion">
-      <div>
-        <strong>{{ usuario.nombre }}</strong>
-        <small>{{ usuario.correo }}</small>
-      </div>
-      <button type="button" class="boton boton--contorno" (click)="limpiarSeleccion()">
-        Cambiar usuario
-      </button>
+  <div class="campo">
+    <label for="buscar-prestamos-activos">Buscar</label>
+    <div class="campo__control">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.3-4.3" />
+      </svg>
+      <input
+        id="buscar-prestamos-activos"
+        type="text"
+        placeholder="Buscar por usuario, correo, título o autor..."
+        [ngModel]="buscarPrestamo()"
+        (ngModelChange)="buscarPrestamo.set($event)"
+        autocomplete="off"
+      />
     </div>
+  </div>
 
-    <ul class="lista-prestamos">
-      @for (prestamo of prestamosActivos(); track prestamo.id) {
-        <li>
-          <div>
-            <strong>{{ prestamo.libro.titulo }}</strong>
-            <small>{{ prestamo.libro.autor }}</small>
-          </div>
-          <div class="lista-prestamos__fechas">
-            <small>Prestado: {{ prestamo.fechaPrestamo }}</small>
-            <small>Vence: {{ prestamo.fechaVencimiento }}</small>
-          </div>
-          <span class="etiqueta etiqueta--celeste">{{ prestamo.estado }}</span>
-        </li>
-      } @empty {
-        <li class="lista-prestamos__vacio">Este usuario no tiene préstamos activos.</li>
-      }
-    </ul>
-  } @else {
-    <div class="campo">
-      <label for="buscar-usuario-activos">Buscar usuario</label>
-      <div class="campo__control">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-        <input
-          id="buscar-usuario-activos"
-          type="text"
-          placeholder="Buscar por nombre o matrícula..."
-          [ngModel]="buscarUsuario()"
-          (ngModelChange)="buscarUsuario.set($event)"
-          autocomplete="off"
-        />
-      </div>
-    </div>
-
-    <ul class="lista-seleccionable">
-      @for (usuario of usuarios(); track usuario.id) {
-        <li>
-          <button type="button" (click)="seleccionarUsuario(usuario.id)">
-            <div>
-              <strong>{{ usuario.nombre }}</strong>
-              <small>{{ usuario.correo }}</small>
-            </div>
-            <span class="etiqueta" [class.etiqueta--celeste]="usuario.estado === 'ACTIVO'">
-              {{ usuario.estado }}
-            </span>
-          </button>
-        </li>
-      } @empty {
-        <li class="lista-seleccionable__vacio">No se encontraron usuarios.</li>
-      }
-    </ul>
-  }
+  <ul class="lista-prestamos">
+    @for (prestamo of prestamosActivos(); track prestamo.id) {
+      <li>
+        <div>
+          <strong>{{ prestamo.libro.titulo }}</strong>
+          <small>{{ prestamo.usuario.nombre }} · {{ prestamo.usuario.correo }}</small>
+        </div>
+        <div class="lista-prestamos__fechas">
+          <small>Prestado: {{ prestamo.fechaPrestamo }}</small>
+          <small>Vence: {{ prestamo.fechaVencimiento }}</small>
+        </div>
+        <span class="etiqueta etiqueta--celeste">{{ prestamo.estado }}</span>
+      </li>
+    } @empty {
+      <li class="lista-prestamos__vacio">No hay préstamos activos que coincidan.</li>
+    }
+  </ul>
 </section>

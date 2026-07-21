@@ -11,24 +11,9 @@ import { PrestamosService } from '../prestamos.service';
 export class PrestamosActivos {
   private readonly prestamosService = inject(PrestamosService);
 
-  protected readonly buscarUsuario = signal('');
-  protected readonly usuarioId = signal('');
-
-  protected readonly usuarios = computed(() => this.prestamosService.buscarUsuarios(this.buscarUsuario()));
-  protected readonly usuarioSeleccionado = computed(() =>
-    this.prestamosService.usuarios().find((u) => u.id === this.usuarioId()),
-  );
+  protected readonly buscarPrestamo = signal('');
 
   protected readonly prestamosActivos = computed(() =>
-    this.usuarioId() ? this.prestamosService.prestamosActivosDeUsuario(this.usuarioId()) : [],
+    this.prestamosService.buscarPrestamosActivos(this.buscarPrestamo()),
   );
-
-  seleccionarUsuario(id: string): void {
-    this.usuarioId.set(id);
-  }
-
-  limpiarSeleccion(): void {
-    this.usuarioId.set('');
-    this.buscarUsuario.set('');
-  }
 }

@@ -26,9 +26,10 @@ export class PanelPrestamos {
       return;
     }
 
-    // Usuarios y préstamos son de administración; se cargan una sola vez para todo el panel.
+    // Usuarios, préstamos y reservas son de administración; se cargan una sola vez para todo el panel.
     this.prestamosService.cargarUsuarios();
     this.prestamosService.cargarPrestamos();
+    this.prestamosService.cargarReservas();
   }
 
   alternarMenu(): void {

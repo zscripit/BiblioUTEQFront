@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PrestamosService } from '../prestamos.service';
+import { PrestamosService, ReservaDetallada } from '../prestamos.service';
 
 @Component({
   selector: 'app-registrar-prestamo',
@@ -24,6 +24,9 @@ export class RegistrarPrestamo {
   protected readonly usuarios = computed(() => this.prestamosService.buscarUsuarios(this.buscarUsuario()));
   protected readonly libros = computed(() => this.prestamosService.buscarLibros(this.buscarLibro()));
 
+  /** Todas las reservas ACTIVA del sistema, listas para convertirse en préstamo. */
+  protected readonly solicitudes = computed(() => this.prestamosService.solicitudesPendientes());
+
   protected readonly usuarioSeleccionado = computed(() =>
     this.prestamosService.usuarios().find((u) => u.id === this.usuarioId()),
   );
@@ -46,6 +49,25 @@ export class RegistrarPrestamo {
       }));
   });
 
+  /** Selecciona directamente una solicitud (reserva) pendiente, sin tener que buscar al usuario. */
+  seleccionarSolicitud(solicitud: ReservaDetallada): void {
+    this.usuarioId.set(solicitud.usuarioId);
+    this.libroId.set(solicitud.libroId);
+    this.reservaId.set(solicitud.id);
+    this.buscarUsuario.set('');
+    this.buscarLibro.set('');
+    this.mensaje.set('');
+    this.prestamosService.cargarReservasDeUsuario(solicitud.usuarioId);
+  }
+
+  /** Vuelve a la lista de solicitudes pendientes sin haber registrado nada. */
+  cancelarSeleccion(): void {
+    this.usuarioId.set('');
+    this.libroId.set('');
+    this.reservaId.set('');
+    this.mensaje.set('');
+  }
+
   seleccionarUsuario(id: string): void {
     this.usuarioId.set(id);
     this.libroId.set('');
@@ -54,9 +76,26 @@ export class RegistrarPrestamo {
     this.prestamosService.cargarReservasDeUsuario(id);
   }
 
+  /** Quita al usuario seleccionado y vuelve a mostrar la lista completa de usuarios. */
+  cambiarUsuario(): void {
+    this.usuarioId.set('');
+    this.libroId.set('');
+    this.reservaId.set('');
+    this.buscarUsuario.set('');
+    this.mensaje.set('');
+  }
+
   seleccionarLibro(id: string): void {
     this.libroId.set(id);
     this.reservaId.set('');
+    this.mensaje.set('');
+  }
+
+  /** Quita el libro seleccionado y vuelve a mostrar la lista completa de libros. */
+  cambiarLibro(): void {
+    this.libroId.set('');
+    this.reservaId.set('');
+    this.buscarLibro.set('');
     this.mensaje.set('');
   }
 
